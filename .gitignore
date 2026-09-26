@@ -10,6 +10,8 @@ xcuserdata/
 .swiftpm/
 screenshots/
 .claude/
+.codex/
+.impeccable/
 .private/
 *.xcresult/
 *.log
