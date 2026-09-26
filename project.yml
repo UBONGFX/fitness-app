@@ -1,0 +1,72 @@
+name: FitnessApp
+options:
+  bundleIdPrefix: com.jordiisken
+  deploymentTarget:
+    iOS: "26.0"
+  createIntermediateGroups: true
+
+settings:
+  base:
+    SWIFT_VERSION: "6.0"
+    SWIFT_APPROACHABLE_CONCURRENCY: YES
+    SWIFT_DEFAULT_ACTOR_ISOLATION: MainActor
+    ENABLE_USER_SCRIPT_SANDBOXING: YES
+
+targets:
+  FitnessApp:
+    type: application
+    platform: iOS
+    sources:
+      - path: Sources
+    settings:
+      base:
+        PRODUCT_BUNDLE_IDENTIFIER: com.jordiisken.fitnessapp
+        GENERATE_INFOPLIST_FILE: YES
+        MARKETING_VERSION: "0.1"
+        CURRENT_PROJECT_VERSION: "1"
+        INFOPLIST_KEY_UILaunchScreen_Generation: YES
+        INFOPLIST_KEY_UISupportedInterfaceOrientations: UIInterfaceOrientationPortrait
+        INFOPLIST_KEY_FitnessDefaultHeightMeters: "1.75"
+        ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME: AccentColor
+        CODE_SIGN_ENTITLEMENTS: Sources/App/FitnessApp.entitlements
+        INFOPLIST_KEY_NSHealthShareUsageDescription: "Liest Gewicht und Körperfett aus Health, um deine Messungen zu ergänzen."
+        INFOPLIST_KEY_NSHealthUpdateUsageDescription: "Schreibt abgeschlossene Trainingseinheiten nach Health."
+
+  FitnessAppTests:
+    type: bundle.unit-test
+    platform: iOS
+    sources:
+      - path: Tests
+    dependencies:
+      - target: FitnessApp
+    settings:
+      base:
+        PRODUCT_BUNDLE_IDENTIFIER: com.jordiisken.fitnessapp.tests
+        GENERATE_INFOPLIST_FILE: YES
+
+  FitnessAppUITests:
+    type: bundle.ui-testing
+    platform: iOS
+    sources:
+      - path: UITests
+    dependencies:
+      - target: FitnessApp
+    settings:
+      base:
+        PRODUCT_BUNDLE_IDENTIFIER: com.jordiisken.fitnessapp.uitests
+        GENERATE_INFOPLIST_FILE: YES
+        # XCTestCase overrides are nonisolated; MainActor-by-default clashes with them.
+        SWIFT_DEFAULT_ACTOR_ISOLATION: nonisolated
+
+schemes:
+  FitnessApp:
+    build:
+      targets:
+        FitnessApp: all
+        FitnessAppTests: [test]
+        FitnessAppUITests: [test]
+    run:
+      config: Debug
+    test:
+      config: Debug
+      targets: [FitnessAppTests, FitnessAppUITests]
