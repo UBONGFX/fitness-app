@@ -1,3 +1,4 @@
+import Charts
 import SwiftData
 import SwiftUI
 
@@ -19,6 +20,22 @@ struct TrainingView: View {
 
     private var templates: [PlanDay] { WorkoutLibrary.templates(in: allDays) }
     private var activeSession: WorkoutSession? { sessions.first(where: \.isActive) }
+    private var thisWeek: [WorkoutSession] {
+        ActualVolume.sessions(in: ActualVolume.week(containing: Date()), from: sessions)
+    }
+    private var muscleVolume: [VolumeRow] { ActualVolume.rows(from: thisWeek) }
+    private var weeklyLoads: [WeeklyLoad] {
+        let start = ActualVolume.week(containing: Date()).start
+        return (0..<6).reversed().compactMap { offset in
+            guard let weekStart = Calendar.current.date(byAdding: .weekOfYear, value: -offset, to: start),
+                  let weekEnd = Calendar.current.date(byAdding: .day, value: 7, to: weekStart)
+            else { return nil }
+            let logged = ActualVolume.sessions(
+                in: DateInterval(start: weekStart, end: weekEnd), from: sessions
+            )
+            return WeeklyLoad(date: weekStart, load: logged.reduce(0) { $0 + $1.totalLoad })
+        }
+    }
 
     var body: some View {
         NavigationStack {
@@ -31,7 +48,7 @@ struct TrainingView: View {
             }
             .background(AppBackground())
             .navigationTitle(activeSession?.dayName ?? "Training")
-            .navigationBarTitleDisplayMode(.inline)
+            .navigationBarTitleDisplayMode(activeSession == nil ? .large : .inline)
             .sheet(isPresented: $showingActions, onDismiss: performPendingAction) {
                 WorkoutActionsSheet(hasTemplates: !templates.isEmpty) { action in
                     pendingAction = action
@@ -61,7 +78,7 @@ struct TrainingView: View {
     private var libraryScreen: some View {
         ScrollView {
             VStack(alignment: .leading, spacing: Theme.Spacing.section) {
-                header
+                volumeSection
                 workoutSection
                 HistoryCard(sessions: sessions)
             }
@@ -71,7 +88,6 @@ struct TrainingView: View {
         }
         .scrollEdgeEffectStyle(.soft, for: .top)
         .clearsBottomAccessory()
-        .toolbar(.hidden, for: .navigationBar)
         .overlay(alignment: .bottomTrailing) {
             Button {
                 showingActions = true
@@ -87,21 +103,80 @@ struct TrainingView: View {
         }
     }
 
-    private var header: some View {
-        VStack(alignment: .leading, spacing: 6) {
-            Text("DEIN TRAINING")
-                .font(.caption.weight(.bold))
-                .tracking(1.8)
-                .foregroundStyle(.tint)
-            Text("Trainiere, wann du willst.")
-                .font(.largeTitle.weight(.bold))
-                .tracking(-0.8)
-                .fixedSize(horizontal: false, vertical: true)
-            Text("Wähle ein Workout oder starte frei.")
-                .font(.subheadline)
+    private var volumeSection: some View {
+        SolidCard {
+            VStack(alignment: .leading, spacing: Theme.Spacing.regular) {
+                HStack {
+                    Text("Diese Woche")
+                        .font(.headline)
+                    Spacer()
+                    Text("TRAININGSUMFANG")
+                        .font(.caption2.weight(.semibold))
+                        .tracking(1.1)
+                        .foregroundStyle(.secondary)
+                }
+
+                HStack(alignment: .firstTextBaseline, spacing: Theme.Spacing.section) {
+                    volumeStat("Einheiten", "\(thisWeek.count)")
+                    volumeStat("Sätze", "\(thisWeek.reduce(0) { $0 + $1.completedSets })")
+                    volumeStat("Last", "\(Int(thisWeek.reduce(0) { $0 + $1.totalLoad })) kg")
+                }
+
+                if muscleVolume.isEmpty {
+                    Text("Nach dem ersten Satz siehst du hier deine Muskelgruppen.")
+                        .font(.footnote)
+                        .foregroundStyle(.secondary)
+                } else {
+                    Divider()
+                    ForEach(muscleVolume.prefix(3)) { row in
+                        HStack {
+                            Text(row.muscle.displayName)
+                            Spacer()
+                            Text("\(row.totalText) Sätze")
+                                .monospacedDigit()
+                                .foregroundStyle(.secondary)
+                        }
+                        .font(.footnote)
+                    }
+                    Text("Direkte Sätze + halbe Beteiligung weiterer Muskelgruppen")
+                        .font(.caption2)
+                        .foregroundStyle(.secondary)
+                }
+
+                if weeklyLoads.contains(where: { $0.load > 0 }) {
+                    Divider()
+                    Text("Last · letzte 6 Wochen")
+                        .font(.caption.weight(.semibold))
+                        .foregroundStyle(.secondary)
+                    Chart(weeklyLoads) { week in
+                        BarMark(
+                            x: .value("Woche", week.date, unit: .weekOfYear),
+                            y: .value("Last", week.load)
+                        )
+                        .foregroundStyle(Color.accentColor)
+                    }
+                    .chartYAxis(.hidden)
+                    .frame(height: 92)
+                    .accessibilityLabel("Trainingslast der letzten sechs Wochen")
+                    .accessibilityValue(weeklyLoads.map {
+                        "\($0.date.formatted(.dateTime.day().month(.abbreviated))): \(Int($0.load)) Kilogramm"
+                    }.joined(separator: ", "))
+                }
+            }
+        }
+    }
+
+    private func volumeStat(_ label: String, _ value: String) -> some View {
+        VStack(alignment: .leading, spacing: 3) {
+            Text(value)
+                .font(.title3.weight(.semibold).monospacedDigit())
+                .lineLimit(1)
+                .minimumScaleFactor(0.7)
+            Text(label)
+                .font(.caption2)
                 .foregroundStyle(.secondary)
         }
-        .padding(.bottom, 2)
+        .frame(maxWidth: .infinity, alignment: .leading)
     }
 
     private var workoutSection: some View {
@@ -239,17 +314,24 @@ struct TrainingView: View {
     }
 }
 
+private struct WeeklyLoad: Identifiable {
+    let date: Date
+    let load: Double
+    var id: Date { date }
+}
+
 private enum WorkoutAction {
     case saved, create, free
 }
 
 private struct WorkoutActionsSheet: View {
+    @Environment(\.colorScheme) private var scheme
     let hasTemplates: Bool
     let select: (WorkoutAction) -> Void
 
     var body: some View {
         VStack(alignment: .leading, spacing: Theme.Spacing.regular) {
-            Text("Training starten")
+            Text("Training")
                 .font(.title2.weight(.bold))
                 .padding(.top, Theme.Spacing.regular)
             action("Gespeichertes Workout starten", subtitle: "Aus deinen Workouts wählen", icon: "dumbbell", enabled: hasTemplates) {
@@ -281,7 +363,7 @@ private struct WorkoutActionsSheet: View {
                     .font(.title3)
                     .foregroundStyle(.tint)
                     .frame(width: 44, height: 44)
-                    .background(Color.accentColor.opacity(0.12), in: .rect(cornerRadius: 12))
+                    .background(Theme.Palette.raised(scheme), in: .rect(cornerRadius: Theme.Radius.control))
                 VStack(alignment: .leading, spacing: 2) {
                     Text(title)
                         .font(.subheadline.weight(.semibold))
@@ -297,7 +379,7 @@ private struct WorkoutActionsSheet: View {
             }
             .padding(Theme.Spacing.tight)
             .frame(maxWidth: .infinity, alignment: .leading)
-            .background(Color(.secondarySystemBackground), in: .rect(cornerRadius: 16))
+            .background(Theme.Palette.surface(scheme), in: .rect(cornerRadius: Theme.Radius.card))
         }
         .buttonStyle(.plain)
         .accessibilityLabel(title)

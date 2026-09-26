@@ -41,13 +41,13 @@ struct RestTimerAccessory: View {
 
             Button("+30 s") { timer.extend(by: 30) }
                 .font(.caption.weight(.semibold))
-                .buttonStyle(.glass)
+                .buttonStyle(.bordered)
                 .accessibilityIdentifier("restExtend")
 
             Button("Pause abbrechen", systemImage: "xmark") { timer.stop() }
                 .labelStyle(.iconOnly)
                 .font(.caption)
-                .buttonStyle(.glass)
+                .buttonStyle(.bordered)
                 .accessibilityIdentifier("restStop")
         }
         .padding(.horizontal, Theme.Spacing.regular)
@@ -69,7 +69,7 @@ struct RestTimerAccessory: View {
                 .lineLimit(1)
                 // Without this the label wraps before the row shrinks.
                 .fixedSize(horizontal: true, vertical: false)
-                .buttonStyle(.glass)
+                .buttonStyle(.bordered)
                 .accessibilityIdentifier("restPreset-\(seconds)")
             }
         }

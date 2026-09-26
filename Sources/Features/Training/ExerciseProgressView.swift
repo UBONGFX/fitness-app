@@ -54,7 +54,7 @@ struct ExerciseProgressView: View {
     // MARK: - Headline
 
     private var headlineCard: some View {
-        GlassCard(tint: .teal) {
+        SolidCard {
             VStack(alignment: .leading, spacing: Theme.Spacing.regular) {
                 HStack(spacing: Theme.Spacing.tight) {
                     stat(
@@ -106,8 +106,8 @@ struct ExerciseProgressView: View {
     }
 
     private func tint(for change: String?) -> Color {
-        guard let change else { return .clear }
-        return change.hasPrefix("−") ? .orange : .green
+        guard change != nil else { return .clear }
+        return .accentColor
     }
 
     // MARK: - Chart
@@ -137,14 +137,14 @@ struct ExerciseProgressView: View {
                 )
                 .interpolationMethod(.linear)
                 .lineStyle(StrokeStyle(lineWidth: 2.5, lineCap: .round))
-                .foregroundStyle(.teal)
+                .foregroundStyle(.tint)
 
                 PointMark(
                     x: .value("Datum", point.date),
                     y: .value("Gewicht", point.workingWeight)
                 )
                 .symbolSize(60)
-                .foregroundStyle(.teal)
+                .foregroundStyle(.tint)
                 .annotation(position: .top, spacing: 4, overflowResolution: .init(x: .fit, y: .disabled)) {
                     Text(Progression.format(point.workingWeight))
                         .font(.caption2.weight(.semibold).monospacedDigit())

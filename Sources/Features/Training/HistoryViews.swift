@@ -132,7 +132,7 @@ struct SessionDetailView: View {
         ScrollView {
             GlassEffectContainer(spacing: Theme.Spacing.regular) {
                 VStack(spacing: Theme.Spacing.regular) {
-                    GlassCard(tint: session.category.color) {
+                    SolidCard {
                         VStack(alignment: .leading, spacing: Theme.Spacing.tight) {
                             Text(session.startedAt, format: .dateTime.weekday(.wide).day().month(.wide).year())
                                 .font(.footnote)

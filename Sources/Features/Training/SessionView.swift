@@ -20,31 +20,29 @@ struct SessionView: View {
 
     var body: some View {
         ScrollView {
-            GlassEffectContainer(spacing: Theme.Spacing.regular) {
-                VStack(spacing: Theme.Spacing.regular) {
-                    summaryCard
+            VStack(spacing: Theme.Spacing.regular) {
+                summaryCard
 
-                    ForEach(session.sortedExercises) { entry in
-                        LoggedExerciseCard(
-                            entry: entry,
-                            suggestion: suggestion(for: entry),
-                            onAddSet: { editing = .newSet(entry) },
-                            onEditSet: { editing = .existingSet($0, entry) },
-                            onDeleteSet: { delete($0, from: entry) }
-                        )
-                    }
-
-                    if session.isActive {
-                        Button("Übung hinzufügen", systemImage: "plus") {
-                            showingExercisePicker = true
-                        }
-                        .buttonStyle(.glassProminent)
-                        .frame(maxWidth: .infinity)
-                        .accessibilityIdentifier("addSessionExercise")
-                    }
+                ForEach(session.sortedExercises) { entry in
+                    LoggedExerciseCard(
+                        entry: entry,
+                        suggestion: suggestion(for: entry),
+                        onAddSet: { editing = .newSet(entry) },
+                        onEditSet: { editing = .existingSet($0, entry) },
+                        onDeleteSet: { delete($0, from: entry) }
+                    )
                 }
-                .padding(Theme.Spacing.regular)
+
+                if session.isActive {
+                    Button("Übung hinzufügen", systemImage: "plus") {
+                        showingExercisePicker = true
+                    }
+                    .buttonStyle(.bordered)
+                    .frame(maxWidth: .infinity)
+                    .accessibilityIdentifier("addSessionExercise")
+                }
             }
+            .padding(Theme.Spacing.regular)
         }
         .scrollEdgeEffectStyle(.soft, for: .top)
         .clearsBottomAccessory()
@@ -81,7 +79,7 @@ struct SessionView: View {
     }
 
     private var summaryCard: some View {
-        GlassCard(tint: session.category.color) {
+        SolidCard {
             VStack(alignment: .leading, spacing: Theme.Spacing.tight) {
                 if !session.isActive {
                     // A past session is being corrected, not performed. Saying so
@@ -228,7 +226,7 @@ private struct LoggedExerciseCard: View {
                     HStack(alignment: .top, spacing: 6) {
                         Image(systemName: suggestion.raisesWeight ? "arrow.up.circle.fill" : "equal.circle.fill")
                             .font(.caption)
-                            .foregroundStyle(suggestion.raisesWeight ? .green : .secondary)
+                            .foregroundStyle(suggestion.raisesWeight ? Color.accentColor : .secondary)
                         VStack(alignment: .leading, spacing: 1) {
                             Text("Vorschlag: \(Progression.format(suggestion.weight)) kg × \(suggestion.reps)")
                                 .font(.caption.weight(.semibold))
@@ -300,7 +298,8 @@ private struct LoggedExerciseCard: View {
                 }
 
                 Button("Satz hinzufügen", systemImage: "plus", action: onAddSet)
-                    .buttonStyle(.glass)
+                    .buttonStyle(.borderedProminent)
+                    .frame(maxWidth: .infinity, alignment: .leading)
                     .accessibilityIdentifier("addSet-\(entry.name)")
             }
         }
