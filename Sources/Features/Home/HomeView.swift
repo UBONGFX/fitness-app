@@ -3,9 +3,7 @@ import SwiftUI
 
 /// The landing screen: progress and a shortcut to training.
 ///
-/// Deliberately a summary and not a second place to enter data — each card links
-/// into the tab that owns the thing it shows. The full week lives on the training
-/// screen, where the session it leads to is started.
+/// A summary; each card links into the tab that owns the underlying data.
 struct HomeView: View {
     @Query(sort: \MetricGoal.metricRaw) private var goals: [MetricGoal]
     @Query(sort: \BodyMeasurement.date) private var measurements: [BodyMeasurement]

@@ -33,6 +33,24 @@ struct GlassCard<Content: View>: View {
     }
 }
 
+/// Opaque content surface for screens where workout names and numbers lead.
+struct SolidCard<Content: View>: View {
+    @Environment(\.colorScheme) private var colorScheme
+    @ViewBuilder var content: Content
+
+    var body: some View {
+        content
+            .padding(Theme.Spacing.loose)
+            .frame(maxWidth: .infinity, alignment: .leading)
+            .background(
+                colorScheme == .dark
+                    ? Color(red: 0.16, green: 0.17, blue: 0.19)
+                    : Color.white,
+                in: .rect(cornerRadius: Theme.Radius.card)
+            )
+    }
+}
+
 /// A small pill used for muscle groups, categories and set counts.
 struct GlassBadge: View {
     let text: String

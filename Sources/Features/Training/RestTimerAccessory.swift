@@ -3,8 +3,7 @@ import SwiftUI
 /// The pause timer that lives above the tab bar.
 ///
 /// It sits in `tabViewBottomAccessory` rather than inside the session screen so
-/// the countdown keeps running — and stays visible — while browsing the plan or
-/// checking body measurements mid-workout.
+/// the countdown keeps running while checking body measurements mid-workout.
 struct RestTimerAccessory: View {
     @Environment(RestTimer.self) private var timer
     let hasActiveSession: Bool

@@ -11,11 +11,11 @@ struct HistoryCard: View {
 
     var body: some View {
         if !recent.isEmpty {
-            GlassCard {
+            SolidCard {
                 VStack(alignment: .leading, spacing: Theme.Spacing.regular) {
                     HStack(alignment: .firstTextBaseline) {
                         SectionHeader(
-                            title: "Historie",
+                            title: "Letzte Einheiten",
                             subtitle: "\(SessionHistory.finished(sessions).count) Einheiten"
                         )
                         NavigationLink("Alle") {
@@ -45,7 +45,7 @@ private struct SessionRow: View {
     var body: some View {
         HStack(spacing: Theme.Spacing.regular) {
             Circle()
-                .fill(session.category.color)
+                .fill(Color.accentColor)
                 .frame(width: 8, height: 8)
             VStack(alignment: .leading, spacing: 1) {
                 Text(session.dayName)

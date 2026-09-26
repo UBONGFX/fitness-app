@@ -2,12 +2,9 @@ import SwiftData
 import SwiftUI
 
 enum AppTab: String, CaseIterable {
-    // No `data` case any more: export and import live in the settings sheet.
-    // A tab is for something you open during a workout; this was opened twice a
-    // year and took a fifth of the bar.
-    case home, training, body, plan
+    case home, training, body
 
-    /// Lets screenshot runs open a specific tab: `simctl launch … -startTab plan`.
+    /// Lets screenshot runs open a specific tab: `simctl launch … -startTab training`.
     /// Without the argument the app always starts on the overview.
     static var launchDefault: AppTab {
         guard let raw = UserDefaults.standard.string(forKey: "startTab"),
@@ -58,9 +55,6 @@ struct RootView: View {
             }
             Tab("Körper", systemImage: "ruler", value: AppTab.body) {
                 BodyView(isUsingFallbackStore: isUsingFallbackStore)
-            }
-            Tab("Workouts", systemImage: "dumbbell", value: AppTab.plan) {
-                PlanView()
             }
         }
         // On the whole tab view, not on a screen: a sheet presented from here
