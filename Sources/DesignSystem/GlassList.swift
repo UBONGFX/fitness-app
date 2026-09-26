@@ -1,6 +1,6 @@
 import SwiftUI
 
-/// Where a row sits in its group, which decides which corners are rounded.
+/// Where a row sits in its grouped record.
 enum GlassRowPosition {
     case only, first, middle, last
 
@@ -18,8 +18,7 @@ enum GlassRowPosition {
 }
 
 extension View {
-    /// Puts a `List` or `Form` on the app's glass background instead of the
-    /// system's opaque grouped style.
+    /// Puts a `List` or `Form` on the app canvas.
     ///
     /// Rows sit flush against each other so a section reads as **one** card with
     /// separators, the way a grouped list does — separate capsules per row were
@@ -32,7 +31,7 @@ extension View {
 }
 
 extension View {
-    /// Glass behind a list row.
+    /// A solid record surface behind a list row.
     ///
     /// Must sit on a row or on a `Section` — applying it to the whole `List` or
     /// `Form` does nothing at all, the rows simply stay white.
@@ -43,19 +42,24 @@ extension View {
         _ position: GlassRowPosition = .only,
         cornerRadius: CGFloat = Theme.Radius.control
     ) -> some View {
-        listRowBackground(
-            // `.clear` rather than `.regular`: the regular material over a light
-            // gradient renders almost opaque white, which is not glass at all.
-            Color.clear.glassEffect(
-                .clear,
-                in: .rect(
-                    topLeadingRadius: position.roundsTop ? cornerRadius : 0,
-                    bottomLeadingRadius: position.roundsBottom ? cornerRadius : 0,
-                    bottomTrailingRadius: position.roundsBottom ? cornerRadius : 0,
-                    topTrailingRadius: position.roundsTop ? cornerRadius : 0
-                )
-            )
-        )
+        listRowBackground(SolidRowBackground(position: position, cornerRadius: cornerRadius))
         .listRowSeparator(position.showsSeparator ? .visible : .hidden)
+    }
+}
+
+private struct SolidRowBackground: View {
+    @Environment(\.colorScheme) private var colorScheme
+
+    let position: GlassRowPosition
+    let cornerRadius: CGFloat
+
+    var body: some View {
+        UnevenRoundedRectangle(
+            topLeadingRadius: position.roundsTop ? cornerRadius : 0,
+            bottomLeadingRadius: position.roundsBottom ? cornerRadius : 0,
+            bottomTrailingRadius: position.roundsBottom ? cornerRadius : 0,
+            topTrailingRadius: position.roundsTop ? cornerRadius : 0
+        )
+        .fill(Theme.Palette.surface(colorScheme))
     }
 }

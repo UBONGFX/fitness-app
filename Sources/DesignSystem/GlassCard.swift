@@ -1,9 +1,7 @@
 import SwiftUI
 
-/// A content card rendered with the real Liquid Glass material.
-///
-/// Wrap groups of adjacent cards in a `GlassEffectContainer` so their effects
-/// blend instead of fighting each other.
+/// A solid record surface. The existing name keeps call sites stable while
+/// the app's content moves from glass to the logbook's quiet tonal layers.
 struct GlassCard<Content: View>: View {
     @Environment(\.colorScheme) private var colorScheme
 
@@ -15,25 +13,15 @@ struct GlassCard<Content: View>: View {
         self.content = content()
     }
 
-    /// Lighter in the dark.
-    ///
-    /// The same 12% that reads as a hint of colour on a bright backdrop turns
-    /// muddy over near-black — an orange card came out brown. Colour here is
-    /// only ever a category marker, so it loses nothing by being quieter.
-    private var tintStrength: Double { colorScheme == .dark ? 0.07 : 0.12 }
-
     var body: some View {
         content
             .padding(Theme.Spacing.loose)
             .frame(maxWidth: .infinity, alignment: .leading)
-            .glassEffect(
-                tint.map { Glass.regular.tint($0.opacity(tintStrength)) } ?? .regular,
-                in: .rect(cornerRadius: Theme.Radius.card)
-            )
+            .background(Theme.Palette.surface(colorScheme), in: .rect(cornerRadius: Theme.Radius.card))
     }
 }
 
-/// Opaque content surface for screens where workout names and numbers lead.
+/// The same record surface for the workout library.
 struct SolidCard<Content: View>: View {
     @Environment(\.colorScheme) private var colorScheme
     @ViewBuilder var content: Content
@@ -42,17 +30,13 @@ struct SolidCard<Content: View>: View {
         content
             .padding(Theme.Spacing.loose)
             .frame(maxWidth: .infinity, alignment: .leading)
-            .background(
-                colorScheme == .dark
-                    ? Color(red: 0.16, green: 0.17, blue: 0.19)
-                    : Color.white,
-                in: .rect(cornerRadius: Theme.Radius.card)
-            )
+            .background(Theme.Palette.surface(colorScheme), in: .rect(cornerRadius: Theme.Radius.card))
     }
 }
 
-/// A small pill used for muscle groups, categories and set counts.
+/// Small neutral label for muscle groups, categories and set counts.
 struct GlassBadge: View {
+    @Environment(\.colorScheme) private var colorScheme
     let text: String
     var tint: Color = .secondary
 
@@ -61,6 +45,6 @@ struct GlassBadge: View {
             .font(.caption2.weight(.semibold))
             .padding(.horizontal, 10)
             .padding(.vertical, 4)
-            .glassEffect(Glass.regular.tint(tint.opacity(0.22)), in: .capsule)
+            .background(Theme.Palette.raised(colorScheme), in: .rect(cornerRadius: Theme.Radius.badge))
     }
 }
