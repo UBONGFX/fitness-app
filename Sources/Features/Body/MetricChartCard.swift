@@ -112,11 +112,11 @@ struct MetricChartCard: View {
                     yStart: .value("Ziel von", min(goal.lowerBound, goal.upperBound)),
                     yEnd: .value("Ziel bis", max(goal.lowerBound, goal.upperBound))
                 )
-                .foregroundStyle(.green.opacity(0.14))
+                .foregroundStyle(Color.accentColor.opacity(0.14))
 
                 RuleMark(y: .value("Ziel", goal.lowerBound))
                     .lineStyle(StrokeStyle(lineWidth: 1, dash: [3, 3]))
-                    .foregroundStyle(.green.opacity(0.7))
+                    .foregroundStyle(Color.accentColor.opacity(0.7))
             }
 
             ForEach(points) { point in
@@ -126,14 +126,14 @@ struct MetricChartCard: View {
                 )
                 .interpolationMethod(.linear)
                 .lineStyle(StrokeStyle(lineWidth: 2.5, lineCap: .round))
-                .foregroundStyle(.teal)
+                .foregroundStyle(.tint)
 
                 PointMark(
                     x: .value("Datum", point.date),
                     y: .value(metric.displayName, point.value)
                 )
                 .symbolSize(60)
-                .foregroundStyle(.teal)
+                .foregroundStyle(.tint)
                 .annotation(position: .top, spacing: 4, overflowResolution: .init(x: .fit, y: .disabled)) {
                     if labelledPointIDs.contains(point.id) {
                         Text(metric.formatted(point.value))

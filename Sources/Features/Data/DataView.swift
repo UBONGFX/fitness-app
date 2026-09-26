@@ -99,7 +99,7 @@ struct DataView: View {
                     Label("Datei auswählen", systemImage: "square.and.arrow.down")
                         .frame(maxWidth: .infinity)
                 }
-                .buttonStyle(.glass)
+                .buttonStyle(.bordered)
                 .accessibilityIdentifier("chooseImport")
 
                 if let importResult {
@@ -144,7 +144,7 @@ struct DataView: View {
                         Label("Aus Health übernehmen", systemImage: "heart")
                             .frame(maxWidth: .infinity)
                     }
-                    .buttonStyle(.glass)
+                    .buttonStyle(.bordered)
                     .accessibilityIdentifier("importHealth")
                 }
 
@@ -236,7 +236,7 @@ struct DataView: View {
     }
 
     private var exportCard: some View {
-        GlassCard(tint: .indigo) {
+        SolidCard {
             VStack(alignment: .leading, spacing: Theme.Spacing.regular) {
                 VStack(alignment: .leading, spacing: 2) {
                     Text("Alles als JSON")
@@ -259,7 +259,7 @@ struct DataView: View {
                         Label("Datei teilen", systemImage: "square.and.arrow.up")
                             .frame(maxWidth: .infinity)
                     }
-                    .buttonStyle(.glassProminent)
+                    .buttonStyle(.borderedProminent)
                     .accessibilityIdentifier("shareExport")
                     Text(exportURL.lastPathComponent)
                         .font(.caption2.monospaced())
@@ -271,7 +271,7 @@ struct DataView: View {
                         Label("Export erstellen", systemImage: "arrow.down.doc")
                             .frame(maxWidth: .infinity)
                     }
-                    .buttonStyle(.glassProminent)
+                    .buttonStyle(.borderedProminent)
                     .accessibilityIdentifier("createExport")
                 }
             }

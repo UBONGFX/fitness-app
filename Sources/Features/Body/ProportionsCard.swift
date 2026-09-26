@@ -44,13 +44,7 @@ private struct ProportionRow: View {
     let proportion: BodyProportion
     let value: Double
 
-    private var reachedIdeal: Bool { value >= proportion.ideal.lowerBound }
-    private var reachedTarget: Bool { value >= proportion.target }
-
-    private var tint: Color {
-        if reachedIdeal { return .green }
-        return reachedTarget ? .teal : .orange
-    }
+    private var tint: Color { .accentColor }
 
     /// Scale spanning from the target down-shifted a little to just past the
     /// ideal, so the marker has somewhere meaningful to sit in both directions.
@@ -93,7 +87,7 @@ private struct ProportionRow: View {
 
                     // Ideal band
                     Capsule()
-                        .fill(.green.opacity(0.35))
+                        .fill(Color.accentColor.opacity(0.35))
                         .frame(
                             width: max(
                                 position(proportion.ideal.upperBound, in: width)

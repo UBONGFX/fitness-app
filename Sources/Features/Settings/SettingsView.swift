@@ -36,7 +36,6 @@ struct SettingsView: View {
                     row(
                         "Erscheinungsbild",
                         systemImage: appearance.symbol,
-                        tint: .purple,
                         detail: appearance.displayName,
                         identifier: "openAppearance"
                     ) {
@@ -47,7 +46,6 @@ struct SettingsView: View {
                     row(
                         "Benachrichtigungen",
                         systemImage: "bell.badge",
-                        tint: .orange,
                         detail: notificationDetail,
                         identifier: "openNotifications"
                     ) {
@@ -61,7 +59,6 @@ struct SettingsView: View {
                     row(
                         "iCloud-Sync",
                         systemImage: "icloud",
-                        tint: syncState.isHealthy ? .green : .secondary,
                         detail: syncState.title,
                         identifier: "openSync"
                     ) {
@@ -72,7 +69,6 @@ struct SettingsView: View {
                     row(
                         "Daten",
                         systemImage: "square.and.arrow.up",
-                        tint: .blue,
                         detail: dataDetail,
                         identifier: "openData"
                     ) {
@@ -136,7 +132,6 @@ struct SettingsView: View {
     private func row<Destination: View>(
         _ title: String,
         systemImage: String,
-        tint: Color,
         detail: String,
         identifier: String,
         @ViewBuilder destination: @escaping () -> Destination
@@ -147,9 +142,8 @@ struct SettingsView: View {
             HStack(spacing: Theme.Spacing.regular) {
                 Image(systemName: systemImage)
                     .font(.footnote)
-                    .foregroundStyle(.white)
+                    .foregroundStyle(.tint)
                     .frame(width: 28, height: 28)
-                    .background(tint.gradient, in: .rect(cornerRadius: 7))
                 Text(title)
                 Spacer(minLength: Theme.Spacing.tight)
                 Text(detail)

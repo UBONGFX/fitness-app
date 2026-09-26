@@ -32,7 +32,7 @@ struct HeightPickerSheet: View {
                     Text("Speichern")
                         .frame(maxWidth: .infinity)
                 }
-                .buttonStyle(.glassProminent)
+                .buttonStyle(.borderedProminent)
                 .accessibilityIdentifier("saveHeight")
             }
             .padding(Theme.Spacing.regular)

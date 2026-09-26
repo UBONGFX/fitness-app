@@ -15,7 +15,7 @@ struct SyncStatusView: View {
                 LabeledContent("Status") {
                     HStack(spacing: 6) {
                         Circle()
-                            .fill(state.isHealthy ? Color.green : Color.secondary)
+                            .fill(state.isHealthy ? Color.accentColor : Color.secondary)
                             .frame(width: 8, height: 8)
                         Text(state.title)
                     }

@@ -50,7 +50,7 @@ struct GoalsCard: View {
                     )
                     Button("Ziele bearbeiten", systemImage: "slider.horizontal.3", action: onEdit)
                         .labelStyle(.iconOnly)
-                        .buttonStyle(.glass)
+                        .buttonStyle(.bordered)
                         .accessibilityIdentifier("editGoals")
                 }
 
@@ -74,8 +74,7 @@ private struct GoalRow: View {
     let evaluation: GoalEvaluation
 
     private var tint: Color {
-        if evaluation.isReached { return .green }
-        return evaluation.progress > 0 ? .teal : .orange
+        return .accentColor
     }
 
     var body: some View {
@@ -97,7 +96,7 @@ private struct GoalRow: View {
                 if evaluation.isReached {
                     Image(systemName: "checkmark.circle.fill")
                         .font(.caption)
-                        .foregroundStyle(.green)
+                        .foregroundStyle(.tint)
                 } else {
                     Text(evaluation.progress, format: .percent.precision(.fractionLength(0)))
                         .font(.caption.monospacedDigit())

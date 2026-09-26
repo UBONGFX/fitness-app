@@ -3,6 +3,7 @@ import SwiftUI
 
 struct BodyView: View {
     var isUsingFallbackStore = false
+    @Environment(\.colorScheme) private var scheme
 
     @Environment(\.modelContext) private var context
     @Environment(SaveReporter.self) private var saveReporter
@@ -38,7 +39,7 @@ struct BodyView: View {
                     )
                     .font(.footnote)
                     .padding(Theme.Spacing.regular)
-                    .glassEffect(Glass.regular.tint(.orange.opacity(0.25)), in: .rect(cornerRadius: Theme.Radius.control))
+                    .background(Theme.Palette.surface(scheme), in: .rect(cornerRadius: Theme.Radius.control))
                     .padding(.horizontal, Theme.Spacing.regular)
                 }
             }
@@ -73,7 +74,7 @@ struct BodyView: View {
                 editing = nil
                 showingForm = true
             }
-            .buttonStyle(.glassProminent)
+            .buttonStyle(.borderedProminent)
         }
     }
 
