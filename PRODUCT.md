@@ -12,11 +12,11 @@ Individual strength trainees who want to choose a workout for each session, log 
 
 ## Product Purpose
 
-Help an individual lifter train flexibly and track set-by-set progress over time. The app supports creating reusable workouts without assigning them to a fixed weekly schedule, starting a saved workout or a free session, and recording performed sets.
+Help an individual lifter train flexibly, track set-by-set performance, and understand progress toward personal goals over time. The app supports reusable workouts without a fixed weekly schedule, saved or free sessions, and set logging.
 
 ## Positioning
 
-Workouts are reusable but not tied to weekdays. The user chooses what to train each session and can compare logged performance over time. Body measurements and goals support progress tracking alongside training.
+Workouts are reusable but not tied to weekdays. The user chooses what to train each session and can review how individual exercises and personal goals change over time.
 
 ## Operating Context
 
@@ -25,11 +25,11 @@ The interface is currently German-only. The app is used to prepare or start a wo
 ## Capabilities and Constraints
 
 - Native SwiftUI app targeting iOS 26, built with Swift 6 and SwiftData.
-- Supports reusable workout templates, free sessions, exercise and set logging, progression history, body measurements, and goals.
+- Supports reusable workout templates, free sessions, exercise and set logging, exercise history, body measurements, goal tracking, and trend summaries.
 - Data is stored on-device. Users control JSON export and import; exported files contain private fitness data.
 - HealthKit access is optional and permission-based. CloudKit sync is disabled; do not imply that data syncs between devices.
 - Existing on-device records must remain usable when workout screens or models change.
-- The main product priority is flexible workouts and set progress. Body tracking is a supporting feature.
+- The main product priority is flexible workouts, exercise progression, and clear insight into progress toward personal goals.
 
 ## Evidence on Hand
 
@@ -39,5 +39,6 @@ The repository contains the working iOS app, synthetic unit tests, and workout-f
 
 - Let the user decide what to train each session instead of requiring a weekly schedule.
 - Make recording and reviewing performed sets central to the training workflow.
+- Show how individual exercises and personal goals progress over time.
 - Keep training and body progress in one personal fitness tool.
 - Keep fitness data under the user's control and describe storage and sync truthfully.
