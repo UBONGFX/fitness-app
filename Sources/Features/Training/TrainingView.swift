@@ -59,8 +59,8 @@ struct TrainingView: View {
                 }
             }
             .background(AppBackground())
-            .navigationTitle(activeSession?.dayName ?? "Training")
-            .navigationBarTitleDisplayMode(activeSession == nil ? .large : .inline)
+            .navigationTitle(activeSession?.dayName ?? "")
+            .navigationBarTitleDisplayMode(.inline)
             .toolbar {
                 if activeSession == nil && !loggedExercises.isEmpty {
                     ToolbarItem(placement: .primaryAction) {
@@ -103,6 +103,7 @@ struct TrainingView: View {
     private var libraryScreen: some View {
         ScrollView {
             VStack(alignment: .leading, spacing: Theme.Spacing.section) {
+                FieldGuidePageTitle(title: "Training")
                 workoutSection
                 volumeSection
                 if !loggedExercises.isEmpty { exerciseHistorySection }
@@ -111,6 +112,8 @@ struct TrainingView: View {
             .padding(.horizontal, Theme.Spacing.regular)
             .padding(.top, Theme.Spacing.loose)
             .padding(.bottom, 100)
+            .frame(maxWidth: 640)
+            .frame(maxWidth: .infinity)
         }
         .scrollEdgeEffectStyle(.soft, for: .top)
         .clearsBottomAccessory()
@@ -124,7 +127,7 @@ struct TrainingView: View {
                         .font(.title2.weight(.medium))
                         .frame(width: 62, height: 62)
                 }
-                .buttonStyle(.glass)
+                .buttonStyle(.glassProminent)
                 .accessibilityLabel("Workout starten oder erstellen")
                 .accessibilityIdentifier("workoutPlus")
                 Spacer()
@@ -141,7 +144,7 @@ struct TrainingView: View {
             VStack(alignment: .leading, spacing: Theme.Spacing.regular) {
                 HStack {
                     Text("Diese Woche")
-                        .font(.headline)
+                        .font(.system(.title2, design: .serif).weight(.semibold))
                     Spacer()
                     Text("TRAININGSUMFANG")
                         .font(.caption2.weight(.semibold))
@@ -216,7 +219,7 @@ struct TrainingView: View {
         VStack(alignment: .leading, spacing: Theme.Spacing.regular) {
             HStack(alignment: .firstTextBaseline) {
                 Text("Workouts")
-                    .font(.title2.weight(.bold))
+                    .font(.system(.title2, design: .serif).weight(.semibold))
                 Spacer()
                 Text("\(templates.count) gespeichert")
                     .font(.caption)
@@ -301,7 +304,7 @@ struct TrainingView: View {
         VStack(alignment: .leading, spacing: Theme.Spacing.regular) {
             HStack(alignment: .firstTextBaseline) {
                 Text("Übungsfortschritt")
-                    .font(.title2.weight(.bold))
+                    .font(.system(.title2, design: .serif).weight(.semibold))
                 Spacer()
                 NavigationLink("Alle") {
                     ExerciseHistoryIndexView(exercises: loggedExercises, sessions: sessions)
@@ -456,6 +459,7 @@ private struct ExerciseHistoryLink: View {
                         }
                     }
                 }
+                .contentShape(Rectangle())
             }
         }
         .buttonStyle(.plain)
@@ -481,7 +485,7 @@ private struct WorkoutActionsSheet: View {
     var body: some View {
         VStack(alignment: .leading, spacing: Theme.Spacing.regular) {
             Text("Training")
-                .font(.title2.weight(.bold))
+                .font(.system(.title2, design: .serif).weight(.semibold))
                 .padding(.top, Theme.Spacing.regular)
             action("Gespeichertes Workout starten", subtitle: "Aus deinen Workouts wählen", icon: "dumbbell", enabled: hasTemplates) {
                 select(.saved)
@@ -511,8 +515,7 @@ private struct WorkoutActionsSheet: View {
                 Image(systemName: icon)
                     .font(.title3)
                     .foregroundStyle(.tint)
-                    .frame(width: 44, height: 44)
-                    .background(Theme.Palette.raised(scheme), in: .rect(cornerRadius: Theme.Radius.control))
+                    .frame(width: 34, height: 44)
                 VStack(alignment: .leading, spacing: 2) {
                     Text(title)
                         .font(.subheadline.weight(.semibold))
@@ -526,9 +529,11 @@ private struct WorkoutActionsSheet: View {
                     .font(.caption.weight(.semibold))
                     .foregroundStyle(.tertiary)
             }
-            .padding(Theme.Spacing.tight)
+            .padding(.vertical, Theme.Spacing.tight)
             .frame(maxWidth: .infinity, alignment: .leading)
-            .background(Theme.Palette.surface(scheme), in: .rect(cornerRadius: Theme.Radius.card))
+            .overlay(alignment: .top) {
+                Theme.Palette.rule(scheme).frame(height: 1)
+            }
         }
         .buttonStyle(.plain)
         .accessibilityLabel(title)

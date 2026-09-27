@@ -24,13 +24,21 @@ struct BodyView: View {
 
     var body: some View {
         NavigationStack {
-            Group {
-                if measurements.isEmpty {
-                    emptyState
-                } else {
-                    content
+            VStack(alignment: .leading, spacing: Theme.Spacing.regular) {
+                FieldGuidePageTitle(title: "Körper")
+                    .padding(.horizontal, Theme.Spacing.regular)
+                    .padding(.top, Theme.Spacing.tight)
+                Group {
+                    if measurements.isEmpty {
+                        emptyState
+                    } else {
+                        content
+                    }
                 }
+                .frame(maxWidth: .infinity, maxHeight: .infinity)
             }
+            .frame(maxWidth: 640)
+            .frame(maxWidth: .infinity, maxHeight: .infinity)
             .safeAreaInset(edge: .top) {
                 if isUsingFallbackStore {
                     Label(
@@ -44,7 +52,8 @@ struct BodyView: View {
                 }
             }
             .background(AppBackground())
-            .navigationTitle("Körper")
+            .navigationTitle("")
+            .navigationBarTitleDisplayMode(.inline)
             .toolbar {
                 ToolbarItem(placement: .primaryAction) {
                     Button("Messung hinzufügen", systemImage: "plus") {
@@ -219,7 +228,7 @@ private struct MeasurementCard: View {
             VStack(alignment: .leading, spacing: Theme.Spacing.regular) {
                 HStack(alignment: .firstTextBaseline) {
                     Text(measurement.date, format: .dateTime.day().month(.wide).year())
-                        .font(.headline)
+                        .font(.system(.title3, design: .serif).weight(.semibold))
                     Spacer(minLength: Theme.Spacing.tight)
                     if !measurement.note.isEmpty {
                         Text(measurement.note)
@@ -234,7 +243,7 @@ private struct MeasurementCard: View {
                             Image(systemName: "ellipsis")
                                 .font(.footnote)
                                 .foregroundStyle(.secondary)
-                                .frame(width: 30, height: 30)
+                                .frame(width: 44, height: 44)
                                 .contentShape(Rectangle())
                         }
                         .accessibilityLabel("Weitere Aktionen")

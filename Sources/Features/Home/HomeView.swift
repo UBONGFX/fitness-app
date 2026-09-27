@@ -64,9 +64,20 @@ struct HomeView: View {
         NavigationStack {
             ScrollView {
                 VStack(alignment: .leading, spacing: Theme.Spacing.regular) {
-                    Text("Fortschritt")
-                        .font(.largeTitle.weight(.bold))
-                        .tracking(-0.8)
+                    HStack {
+                        Text(Date.now, format: .dateTime.day().month(.wide).year())
+                            .font(.caption)
+                            .foregroundStyle(.secondary)
+                        Spacer()
+                        Button { showingSettings = true } label: {
+                            AccountAvatar(initials: UserProfile.initials)
+                                .frame(width: 44, height: 44)
+                                .contentShape(Rectangle())
+                        }
+                        .accessibilityLabel("Konto und Einstellungen")
+                        .accessibilityIdentifier("openSettings")
+                    }
+                    FieldGuidePageTitle(title: "Fortschritt")
                     if let activeSession { resumeRecord(activeSession) }
                     periodPicker
                     goalRecord
@@ -75,23 +86,15 @@ struct HomeView: View {
                     if trends.count > 1 { otherGoalsRecord }
                 }
                 .padding(.horizontal, Theme.Spacing.regular)
-                .padding(.top, Theme.Spacing.tight)
+                .padding(.top, Theme.Spacing.regular)
                 .padding(.bottom, 100)
+                .frame(maxWidth: 640)
+                .frame(maxWidth: .infinity)
             }
             .background(AppBackground())
             .scrollEdgeEffectStyle(.soft, for: .top)
             .clearsBottomAccessory()
-            .navigationTitle("")
-            .navigationBarTitleDisplayMode(.inline)
-            .toolbar {
-                ToolbarItem(placement: .primaryAction) {
-                    Button { showingSettings = true } label: {
-                        AccountAvatar(initials: UserProfile.initials)
-                    }
-                    .accessibilityLabel("Konto und Einstellungen")
-                    .accessibilityIdentifier("openSettings")
-                }
-            }
+            .toolbar(.hidden, for: .navigationBar)
             .sheet(isPresented: $showingSettings) {
                 SettingsView(appearance: $appearance)
             }
@@ -151,7 +154,7 @@ struct HomeView: View {
                 HStack {
                     VStack(alignment: .leading, spacing: 2) {
                         Text(featuredTrend?.metric.displayName ?? "Meine Ziele")
-                            .font(.title3.weight(.bold))
+                            .font(.system(.title2, design: .serif).weight(.semibold))
                         Text(periodRangeText)
                             .font(.caption)
                             .foregroundStyle(.secondary)
@@ -198,13 +201,13 @@ struct HomeView: View {
         let changeIsAccent = hasGoalReadingInPeriod && trend.direction == .closer
         if dynamicTypeSize.isAccessibilitySize {
             VStack(spacing: Theme.Spacing.tight) {
-                goalMetricRow("Aktuell", trend.currentText ?? "—", isAccent: true)
+                goalMetricRow("Aktuell", trend.currentText ?? "—")
                 goalMetricRow("Zielbereich", trend.targetText)
                 goalMetricRow("Veränderung", change, isAccent: changeIsAccent)
             }
         } else {
             HStack(alignment: .top, spacing: Theme.Spacing.tight) {
-                metric("Aktuell", trend.currentText ?? "—", isAccent: true)
+                metric("Aktuell", trend.currentText ?? "—")
                 metric("Zielbereich", trend.targetText)
                 metric("Veränderung", change, isAccent: changeIsAccent)
             }
@@ -272,7 +275,7 @@ struct HomeView: View {
                             }
                         }
                     }
-                    .frame(height: 112)
+                    .frame(height: 132)
                     if dynamicTypeSize.isAccessibilitySize,
                        let first = points.first?.date, let last = points.last?.date {
                         HStack {
@@ -323,7 +326,7 @@ struct HomeView: View {
                         VStack(alignment: .leading, spacing: Theme.Spacing.regular) {
                             HStack {
                                 Text(featuredExercise.name)
-                                    .font(.title3.weight(.bold))
+                                    .font(.system(.title2, design: .serif).weight(.semibold))
                                 Spacer()
                                 Image(systemName: "chevron.right")
                                     .font(.caption.weight(.semibold))
@@ -349,22 +352,18 @@ struct HomeView: View {
                 GlassCard {
                     VStack(alignment: .leading, spacing: Theme.Spacing.regular) {
                         Text("Übungsfortschritt")
-                            .font(.title3.weight(.bold))
-                        HStack(alignment: .top) {
-                            metric("Letzter Top-Satz", "—")
-                            metric("Veränderung", "—")
+                            .font(.system(.title2, design: .serif).weight(.semibold))
+                        Text("Noch keine Sätze")
+                            .font(.system(.title3, design: .serif).weight(.semibold))
+                        Text("Nach deinem ersten geloggten Satz erscheint hier der Verlauf einer Übung.")
+                            .font(.footnote)
+                            .foregroundStyle(.secondary)
+                        Button { selectedTab = .training } label: {
+                            Text("Zum Training")
+                                .frame(maxWidth: .infinity)
                         }
-                        HStack(spacing: Theme.Spacing.regular) {
-                            Image(systemName: "chart.xyaxis.line")
-                                .font(.title2)
-                                .foregroundStyle(.tint)
-                            Text("Nach deinem ersten geloggten Satz erscheint hier der Verlauf einer Übung.")
-                                .font(.footnote)
-                                .foregroundStyle(.secondary)
-                        }
-                        .frame(maxWidth: .infinity, minHeight: 76, alignment: .leading)
-                        Button("Ersten Satz loggen") { selectedTab = .training }
                             .buttonStyle(.borderedProminent)
+                            .controlSize(.large)
                             .accessibilityIdentifier("openTraining")
                     }
                 }
@@ -396,7 +395,7 @@ struct HomeView: View {
                 VStack(alignment: .leading, spacing: Theme.Spacing.regular) {
                     HStack {
                         Text("Training")
-                            .font(.title3.weight(.bold))
+                            .font(.system(.title2, design: .serif).weight(.semibold))
                         Spacer()
                         Image(systemName: "chevron.right")
                             .font(.caption.weight(.semibold))
@@ -417,7 +416,6 @@ struct HomeView: View {
         }
         .buttonStyle(.plain)
         .accessibilityIdentifier("openTraining")
-        .padding(.top, Theme.Spacing.regular)
     }
 
     private var otherGoalsRecord: some View {
@@ -465,7 +463,7 @@ struct HomeView: View {
                 .font(.caption)
                 .foregroundStyle(.secondary)
             Text(value)
-                .font(.headline.monospacedDigit())
+                .font(.title3.weight(.semibold).monospacedDigit())
                 .foregroundStyle(isAccent ? Color.accentColor : Color.primary)
                 .fixedSize(horizontal: false, vertical: true)
         }
