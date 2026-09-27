@@ -26,7 +26,7 @@ struct MeasurementFormView: View {
         NavigationStack {
             Form {
                 Section {
-                    DatePicker("Datum", selection: $date, displayedComponents: .date)
+                    DatePicker("Datum", selection: $date, in: ...Date(), displayedComponents: .date)
                         .glassRow(.first)
                     TextField("Notiz", text: $note)
                         .glassRow(.last)

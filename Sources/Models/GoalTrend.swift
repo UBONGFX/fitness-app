@@ -63,6 +63,7 @@ nonisolated enum GoalTrends {
         calendar: Calendar = GoalPeriod.calendar
     ) -> [GoalTrend] {
         let periodStart = period.interval(containing: now, calendar: calendar).start
+        let recorded = measurements.filter { $0.date <= now }
         return goals
             .sorted { lhs, rhs in
                 // Follow the metric order used everywhere else rather than the
@@ -73,7 +74,7 @@ nonisolated enum GoalTrends {
                 return left < right
             }
             .map { goal in
-                trend(for: goal, measurements: measurements, periodStart: periodStart)
+                trend(for: goal, measurements: recorded, periodStart: periodStart)
             }
     }
 

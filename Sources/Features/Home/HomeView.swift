@@ -4,6 +4,7 @@ import SwiftUI
 
 /// A personal training record: goals, one exercise, and performed volume.
 struct HomeView: View {
+    @Environment(\.dynamicTypeSize) private var dynamicTypeSize
     @Query(sort: \MetricGoal.metricRaw) private var goals: [MetricGoal]
     @Query(sort: \BodyMeasurement.date) private var measurements: [BodyMeasurement]
     @Query(sort: \WorkoutSession.startedAt, order: .reverse) private var sessions: [WorkoutSession]
@@ -28,15 +29,13 @@ struct HomeView: View {
     private var goalPoints: [MetricPoint] {
         guard let featuredTrend else { return [] }
         let all = MeasurementSeries.points(for: featuredTrend.metric, from: measurements)
-        let current = all.filter { $0.date >= interval.start }
+        let current = all.filter { interval.contains($0.date) && $0.date <= Date() }
         guard !current.isEmpty else { return [] }
         return (all.last { $0.date < interval.start }.map { [$0] } ?? []) + current
     }
     private var hasGoalReadingInPeriod: Bool {
         guard let featuredTrend else { return false }
-        return measurements.contains {
-            interval.contains($0.date) && $0[featuredTrend.metric] != nil
-        }
+        return hasReadingInPeriod(for: featuredTrend.metric)
     }
     private var featuredExercise: Exercise? {
         SessionHistory.finished(sessions)
@@ -50,8 +49,11 @@ struct HomeView: View {
     }
     private var exercisePoints: [ExercisePoint] {
         let all = ExerciseProgress.points(from: exerciseEntries)
-        let current = all.filter { $0.date >= interval.start }
+        let current = all.filter { interval.contains($0.date) && $0.date <= Date() }
         return (all.last { $0.date < interval.start }.map { [$0] } ?? []) + current
+    }
+    private func hasReadingInPeriod(for metric: BodyMetric) -> Bool {
+        measurements.contains { interval.contains($0.date) && $0.date <= Date() && $0[metric] != nil }
     }
     private var performedSessions: [WorkoutSession] {
         sessions.filter { interval.contains($0.startedAt) && $0.completedSets > 0 }
@@ -62,17 +64,11 @@ struct HomeView: View {
         NavigationStack {
             ScrollView {
                 VStack(alignment: .leading, spacing: Theme.Spacing.regular) {
+                    Text("Fortschritt")
+                        .font(.largeTitle.weight(.bold))
+                        .tracking(-0.8)
                     if let activeSession { resumeRecord(activeSession) }
                     periodPicker
-                    HStack {
-                        Text(periodLabel)
-                            .font(.subheadline.weight(.semibold))
-                        Spacer()
-                        Text(interval.start, format: .dateTime.day().month(.abbreviated))
-                            .font(.subheadline.monospacedDigit())
-                            .foregroundStyle(.secondary)
-                    }
-                    .padding(.top, Theme.Spacing.tight)
                     goalRecord
                     exerciseRecord
                     trainingRecord
@@ -85,7 +81,8 @@ struct HomeView: View {
             .background(AppBackground())
             .scrollEdgeEffectStyle(.soft, for: .top)
             .clearsBottomAccessory()
-            .navigationTitle("Fortschritt")
+            .navigationTitle("")
+            .navigationBarTitleDisplayMode(.inline)
             .toolbar {
                 ToolbarItem(placement: .primaryAction) {
                     Button { showingSettings = true } label: {
@@ -111,11 +108,15 @@ struct HomeView: View {
         .accessibilityIdentifier("goalPeriod")
     }
 
-    private var periodLabel: String {
+    private var periodRangeText: String {
         switch period {
-        case .week: "DIESE WOCHE"
-        case .month: "DIESER MONAT"
-        case .quarter: "DIESES QUARTAL"
+        case .week:
+            let lastDay = Calendar.current.date(byAdding: .day, value: -1, to: interval.end) ?? interval.end
+            return "\(interval.start.formatted(.dateTime.day().month(.abbreviated))) – \(lastDay.formatted(.dateTime.day().month(.abbreviated)))"
+        case .month: return interval.start.formatted(.dateTime.month(.wide).year())
+        case .quarter:
+            let lastDay = Calendar.current.date(byAdding: .day, value: -1, to: interval.end) ?? interval.end
+            return "\(interval.start.formatted(.dateTime.month(.abbreviated))) – \(lastDay.formatted(.dateTime.month(.abbreviated).year()))"
         }
     }
 
@@ -148,23 +149,23 @@ struct HomeView: View {
         GlassCard {
             VStack(alignment: .leading, spacing: Theme.Spacing.regular) {
                 HStack {
-                    Text(featuredTrend?.metric.displayName ?? "Meine Ziele")
-                        .font(.title3.weight(.bold))
+                    VStack(alignment: .leading, spacing: 2) {
+                        Text(featuredTrend?.metric.displayName ?? "Meine Ziele")
+                            .font(.title3.weight(.bold))
+                        Text(periodRangeText)
+                            .font(.caption)
+                            .foregroundStyle(.secondary)
+                    }
                     Spacer()
                     Image(systemName: "chevron.right")
                         .font(.caption.weight(.semibold))
                         .foregroundStyle(.tertiary)
                 }
                 if let featuredTrend, let featuredGoal {
-                    HStack(alignment: .top, spacing: Theme.Spacing.tight) {
-                        metric("Aktuell", featuredTrend.currentText ?? "—", isAccent: true)
-                        metric("Zielbereich", featuredTrend.targetText)
-                        metric("Veränderung", hasGoalReadingInPeriod ? (featuredTrend.deltaText ?? "—") : "—",
-                               isAccent: hasGoalReadingInPeriod && featuredTrend.direction == .closer)
-                    }
+                    goalMetrics(featuredTrend)
                     goalChart(goal: featuredGoal, points: goalPoints)
                     if hasGoalReadingInPeriod && featuredTrend.deltaText != nil {
-                        Text(goalChangeText(featuredTrend))
+                        Text("Seit \(goalPoints.first?.date.formatted(.dateTime.day().month(.abbreviated)) ?? "—"): \(goalChangeText(featuredTrend))")
                             .font(.caption)
                             .foregroundStyle(.secondary)
                     } else if !hasGoalReadingInPeriod {
@@ -187,8 +188,41 @@ struct HomeView: View {
     }
 
     private func latestGoalDate(_ metric: BodyMetric) -> String {
-        MeasurementSeries.points(for: metric, from: measurements).last?.date
+        MeasurementSeries.points(for: metric, from: measurements)
+            .last { $0.date <= Date() }?.date
             .formatted(.dateTime.day().month(.abbreviated).year()) ?? "—"
+    }
+
+    @ViewBuilder private func goalMetrics(_ trend: GoalTrend) -> some View {
+        let change = hasGoalReadingInPeriod ? (trend.deltaText ?? "—") : "—"
+        let changeIsAccent = hasGoalReadingInPeriod && trend.direction == .closer
+        if dynamicTypeSize.isAccessibilitySize {
+            VStack(spacing: Theme.Spacing.tight) {
+                goalMetricRow("Aktuell", trend.currentText ?? "—", isAccent: true)
+                goalMetricRow("Zielbereich", trend.targetText)
+                goalMetricRow("Veränderung", change, isAccent: changeIsAccent)
+            }
+        } else {
+            HStack(alignment: .top, spacing: Theme.Spacing.tight) {
+                metric("Aktuell", trend.currentText ?? "—", isAccent: true)
+                metric("Zielbereich", trend.targetText)
+                metric("Veränderung", change, isAccent: changeIsAccent)
+            }
+        }
+    }
+
+    private func goalMetricRow(_ label: String, _ value: String, isAccent: Bool = false) -> some View {
+        HStack(alignment: .firstTextBaseline, spacing: Theme.Spacing.tight) {
+            Text(label)
+                .font(.caption)
+                .foregroundStyle(.secondary)
+            Spacer(minLength: 8)
+            Text(value)
+                .font(.headline.monospacedDigit())
+                .foregroundStyle(isAccent ? Color.accentColor : Color.primary)
+                .multilineTextAlignment(.trailing)
+        }
+        .accessibilityElement(children: .combine)
     }
 
     private func goalChart(goal: MetricGoal, points: [MetricPoint]) -> some View {
@@ -201,31 +235,68 @@ struct HomeView: View {
                     .foregroundStyle(.secondary)
                     .frame(maxWidth: .infinity, minHeight: 36, alignment: .leading)
             } else {
-                Chart {
-                    RuleMark(y: .value("Ziel unten", min(goal.lowerBound, goal.upperBound)))
-                        .foregroundStyle(.secondary.opacity(0.5))
-                        .lineStyle(StrokeStyle(lineWidth: 1, dash: [4, 4]))
-                    if !goal.isSingleValue {
-                        RuleMark(y: .value("Ziel oben", max(goal.lowerBound, goal.upperBound)))
+                VStack(alignment: .leading, spacing: 4) {
+                    Chart {
+                        RuleMark(y: .value("Ziel unten", min(goal.lowerBound, goal.upperBound)))
                             .foregroundStyle(.secondary.opacity(0.5))
                             .lineStyle(StrokeStyle(lineWidth: 1, dash: [4, 4]))
+                        if !goal.isSingleValue {
+                            RuleMark(y: .value("Ziel oben", max(goal.lowerBound, goal.upperBound)))
+                                .foregroundStyle(.secondary.opacity(0.5))
+                                .lineStyle(StrokeStyle(lineWidth: 1, dash: [4, 4]))
+                        }
+                        ForEach(points) { point in
+                            LineMark(x: .value("Datum", point.date), y: .value("Wert", point.value))
+                                .foregroundStyle(Color.accentColor)
+                                .lineStyle(StrokeStyle(lineWidth: 2))
+                            PointMark(x: .value("Datum", point.date), y: .value("Wert", point.value))
+                                .foregroundStyle(Color.accentColor)
+                        }
                     }
-                    ForEach(points) { point in
-                        LineMark(x: .value("Datum", point.date), y: .value("Wert", point.value))
-                            .foregroundStyle(Color.accentColor)
-                            .lineStyle(StrokeStyle(lineWidth: 2))
-                        PointMark(x: .value("Datum", point.date), y: .value("Wert", point.value))
-                            .foregroundStyle(Color.accentColor)
+                    .chartYScale(domain: MeasurementSeries.range(
+                        for: points,
+                        covering: [goal.lowerBound, goal.upperBound]
+                    ) ?? 0...1)
+                    .chartXScale(domain: goalXDomain(points))
+                    .chartXAxis {
+                        if !dynamicTypeSize.isAccessibilitySize {
+                            AxisMarks(values: points.count > 6
+                                      ? [points.first, points.last].compactMap { $0?.date }
+                                      : points.map(\.date)) { value in
+                                AxisValueLabel {
+                                    if let date = value.as(Date.self) {
+                                        Text(date, format: .dateTime.day(.twoDigits).month(.twoDigits))
+                                            .font(.caption2)
+                                    }
+                                }
+                            }
+                        }
+                    }
+                    .frame(height: 112)
+                    if dynamicTypeSize.isAccessibilitySize,
+                       let first = points.first?.date, let last = points.last?.date {
+                        HStack {
+                            Text(first, format: .dateTime.day().month(.abbreviated))
+                            Spacer()
+                            Text(last, format: .dateTime.day().month(.abbreviated))
+                        }
+                        .font(.caption2)
+                        .foregroundStyle(.secondary)
                     }
                 }
-                .chartYScale(domain: MeasurementSeries.range(
-                    for: points,
-                    covering: [goal.lowerBound, goal.upperBound]
-                ) ?? 0...1)
-                .frame(height: 132)
                 .accessibilityLabel("\(goal.metric.displayName) über die Zeit")
             }
         }
+    }
+
+    private func goalXDomain(_ points: [MetricPoint]) -> ClosedRange<Date> {
+        guard let first = points.first?.date, let last = points.last?.date else {
+            return Date.distantPast...Date.distantFuture
+        }
+        let span = max(last.timeIntervalSince(first), 86_400)
+        let leading = max(span * 0.08, 86_400 * 3)
+        let trailing = max(span * 0.18, 86_400 * 3)
+        return first.addingTimeInterval(-leading)...last.addingTimeInterval(trailing)
     }
 
     private func goalChangeText(_ trend: GoalTrend) -> String {
@@ -276,13 +347,23 @@ struct HomeView: View {
                 .buttonStyle(.plain)
             } else {
                 GlassCard {
-                    VStack(alignment: .leading, spacing: Theme.Spacing.tight) {
+                    VStack(alignment: .leading, spacing: Theme.Spacing.regular) {
                         Text("Übungsfortschritt")
                             .font(.title3.weight(.bold))
-                        Text("Logge Sätze, um Arbeitsgewicht und Bestwerte über die Zeit zu sehen.")
-                            .font(.subheadline)
-                            .foregroundStyle(.secondary)
-                        Button("Workout starten") { selectedTab = .training }
+                        HStack(alignment: .top) {
+                            metric("Letzter Top-Satz", "—")
+                            metric("Veränderung", "—")
+                        }
+                        HStack(spacing: Theme.Spacing.regular) {
+                            Image(systemName: "chart.xyaxis.line")
+                                .font(.title2)
+                                .foregroundStyle(.tint)
+                            Text("Nach deinem ersten geloggten Satz erscheint hier der Verlauf einer Übung.")
+                                .font(.footnote)
+                                .foregroundStyle(.secondary)
+                        }
+                        .frame(maxWidth: .infinity, minHeight: 76, alignment: .leading)
+                        Button("Ersten Satz loggen") { selectedTab = .training }
                             .buttonStyle(.borderedProminent)
                             .accessibilityIdentifier("openTraining")
                     }
@@ -336,26 +417,43 @@ struct HomeView: View {
         }
         .buttonStyle(.plain)
         .accessibilityIdentifier("openTraining")
+        .padding(.top, Theme.Spacing.regular)
     }
 
     private var otherGoalsRecord: some View {
         GlassCard {
             VStack(alignment: .leading, spacing: Theme.Spacing.regular) {
-                SectionHeader(title: "Weitere Ziele", subtitle: "Werte und Abstand zum Ziel")
-                ForEach(trends.filter { $0.id != featuredTrend?.id }) { trend in
-                    HStack {
-                        Text(trend.metric.displayName)
-                            .font(.subheadline)
-                        Spacer()
-                        Text(trend.currentText ?? "—")
-                            .font(.subheadline.weight(.semibold).monospacedDigit())
-                        Text("/ \(trend.targetText)")
-                            .font(.caption)
-                            .foregroundStyle(.secondary)
+                SectionHeader(title: "Weitere Ziele", subtitle: "Stand und Veränderung")
+                ForEach(Array(trends.filter { $0.id != featuredTrend?.id }.prefix(3))) { trend in
+                    VStack(alignment: .leading, spacing: Theme.Spacing.tight) {
+                        HStack(alignment: .firstTextBaseline) {
+                            Text(trend.metric.displayName)
+                                .font(.subheadline.weight(.semibold))
+                            Spacer(minLength: Theme.Spacing.tight)
+                            Text(trend.currentText ?? "—")
+                                .font(.subheadline.weight(.semibold).monospacedDigit())
+                            Text("→ \(trend.targetText)")
+                                .font(.caption)
+                                .foregroundStyle(.secondary)
+                        }
+                        if let evaluation = trend.evaluation {
+                            HStack(spacing: Theme.Spacing.tight) {
+                                ProgressView(value: evaluation.progress)
+                                    .tint(.accentColor)
+                                Text(evaluation.progress, format: .percent.precision(.fractionLength(0)))
+                                    .font(.caption2.monospacedDigit())
+                                    .foregroundStyle(.secondary)
+                            }
+                        }
+                        if hasReadingInPeriod(for: trend.metric), trend.deltaText != nil {
+                            Text(goalChangeText(trend))
+                                .font(.caption2)
+                                .foregroundStyle(.secondary)
+                        }
                     }
                     Divider()
                 }
-                Button("Alle Ziele ansehen") { selectedTab = .body }
+                Button("Alle \(trends.count) Ziele ansehen") { selectedTab = .body }
                     .buttonStyle(.bordered)
             }
         }

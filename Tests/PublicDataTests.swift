@@ -1,3 +1,4 @@
+import Foundation
 import Testing
 @testable import FitnessApp
 
@@ -27,5 +28,18 @@ struct PublicDataTests {
     @Test func progressHandlesTargetsAboveAndBelowTheCurrentValue() {
         #expect(GoalProgress.evaluate(start: 70, current: 75, lower: 80, upper: 82).progress > 0)
         #expect(GoalProgress.evaluate(start: 20, current: 22, lower: 12, upper: 15).progress == 0)
+    }
+
+    @Test func futureMeasurementDoesNotCountAsCurrentProgress() {
+        let now = Date(timeIntervalSince1970: 1_700_000_000)
+        let goal = MetricGoal(metric: .weight, lowerBound: 80, upperBound: 82)
+        let past = BodyMeasurement(date: now.addingTimeInterval(-86_400), weight: 75)
+        let future = BodyMeasurement(date: now.addingTimeInterval(86_400), weight: 81)
+
+        let trend = GoalTrends.trends(
+            goals: [goal], measurements: [past, future], period: .month, now: now
+        ).first
+        #expect(trend?.current == 75)
+        #expect(trend?.delta == nil)
     }
 }
