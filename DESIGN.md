@@ -1,82 +1,140 @@
 ---
 name: Fitness App
-description: A personal training logbook for workouts, exercise progression, and body goals.
+description: A measured training field guide for flexible workouts and personal progress.
 colors:
-  accent-dark: "color(display-p3 0.557 0.843 0.651)"
-  accent-light: "color(display-p3 0.102 0.482 0.392)"
-  canvas-dark: "#121416"
-  surface-dark: "#202526"
-  raised-dark: "#2B3032"
-  canvas-light: "#F5F7F6"
-  surface-light: "#FFFFFF"
-  raised-light: "#E9EFEC"
+  clay-light: "color(display-p3 0.785 0.315 0.185)"
+  clay-dark: "color(display-p3 0.975 0.575 0.475)"
+  paper-light: "#F3F2EB"
+  paper-dark: "#161B18"
+  surface-light: "#FBFAF4"
+  surface-dark: "#222824"
+  raised-light: "#E3E4DB"
+  raised-dark: "#323833"
+  rule-light: "rgba(38, 54, 46, 0.32)"
+  rule-dark: "rgba(204, 212, 196, 0.24)"
 typography:
-  headline:
-    fontFamily: "SF Pro"
+  page-title:
+    fontFamily: "iOS system serif"
     fontWeight: 700
-  body:
-    fontFamily: "SF Pro"
-    fontWeight: 400
-  data:
-    fontFamily: "SF Pro"
+    letterSpacing: "-0.5pt"
+  section-title:
+    fontFamily: "iOS system serif"
     fontWeight: 600
+  body:
+    fontFamily: "iOS system"
+  measured-data:
+    fontFamily: "iOS system, monospaced digits"
 rounded:
-  card: "16px"
-  control: "12px"
-  badge: "8px"
+  form-row: "12pt"
+  badge: "8pt"
 spacing:
-  tight: "8px"
-  regular: "16px"
-  loose: "20px"
-  section: "32px"
+  tight: "8pt"
+  regular: "16pt"
+  loose: "20pt"
+  section: "32pt"
 components:
-  record-card:
+  ruled-record:
+    padding: "16pt 0"
+  grouped-form-row:
+    backgroundColor: "{colors.surface-light}"
+    rounded: "{rounded.form-row}"
+  grouped-form-row-dark:
     backgroundColor: "{colors.surface-dark}"
-    rounded: "{rounded.card}"
-    padding: "20px"
-  primary-button:
-    backgroundColor: "{colors.accent-dark}"
+    rounded: "{rounded.form-row}"
+  neutral-badge:
+    backgroundColor: "{colors.raised-light}"
+    rounded: "{rounded.badge}"
+    padding: "4pt 10pt"
+  neutral-badge-dark:
+    backgroundColor: "{colors.raised-dark}"
+    rounded: "{rounded.badge}"
+    padding: "4pt 10pt"
 ---
 
 # Design System: Fitness App
 
 ## Overview
 
-**Creative North Star: "Athlete’s Logbook"**
+**Creative North Star: “Training Field Guide”**
 
-Dated, scannable records make personal history the organizing idea. The interface is calm enough to read during a gym session and detailed enough to review goal and exercise progress later. Use real logged values and clear empty states; never fill a chart with sample results.
+Personal training progress reads as an open, measured page. Warm matte paper and deep olive ink support dated evidence, while thin rules separate sections across the available width. Strong editorial headings orient the reader; native system text keeps sets, forms, and measurements legible during a workout.
 
-**Key Characteristics:** solid record surfaces, native iOS navigation, one restrained progress color, and numbers that are easy to compare.
+The interface follows real stored records and names empty states plainly. The flexible workout flow, native iOS navigation, Dynamic Type, and optional HealthKit remain part of the product. The approved visual direction is a guide to material and rhythm, not a source of decorative slogans or sample data.
+
+**Key Characteristics:** full-width ruled records; warm adaptive neutrals; rare clay accent for actions and meaningful progress; native controls and tab chrome; monospaced measured digits.
 
 ## Colors
 
-The adaptive accent is reserved for primary actions, selected navigation, and progress. Canvas, card, and raised neutrals adapt to light and dark appearance. Use native semantic text colors so labels maintain contrast in both modes.
+### Primary
 
-**The One Accent Rule.** Do not color workout categories or routine icons with competing hues. Warning and destructive states may use system semantic colors when needed.
+- **Clay orange:** `clay-light` and `clay-dark` are the asset-catalog accent for prominent actions, selected native controls, and favorable measured change. The two Display P3 values adapt to appearance.
+
+### Neutral
+
+- **Matte paper:** `paper-light` and `paper-dark` fill the screen through `AppBackground`.
+- **Inset paper:** `surface-light` and `surface-dark` back grouped form rows and occasional inset notices.
+- **Raised neutral:** `raised-light` and `raised-dark` back small badges.
+- **Fine rule:** `rule-light` and `rule-dark` separate open records. Text uses native primary and secondary semantic colors so contrast follows the current appearance.
+
+**The Measured Accent Rule.** Use clay for actions and actual progress. Keep section rules, category badges, and supporting labels neutral. System semantic warning and destructive colors remain appropriate for those states.
 
 ## Typography
 
-Use the system SF Pro text styles and Dynamic Type. Large native navigation titles orient each main tab; semibold card titles identify records. Show weights, reps, dates, and percentages with monospaced digits for stable scanning. Keep secondary labels short and avoid all-caps prose; tracked uppercase is only for a small section label.
+**Display font:** iOS system serif, with Dynamic Type text styles.
+**Body font:** iOS system sans, with native text styles.
+
+### Hierarchy
+
+- **Page title:** bold serif `largeTitle`, tracked slightly tighter. Used for main screen headings such as Fortschritt, Training, and Körper.
+- **Section title:** semibold serif `title3`, with `title2` on prominent goal and detail records.
+- **Body and controls:** native body, subheadline, headline, and footnote styles according to reading priority.
+- **Measured data:** native styles with monospaced digits for weights, repetitions, counts, dates, and comparisons.
+- **Supporting label:** native caption styles in secondary semantic color.
+
+**The Editorial Heading Rule.** Serif type orients a page or record; dense set data and form controls stay in system sans.
 
 ## Layout
 
-Main screens use a single scroll column with 16-point side margins. Space items within a record by 8–16 points and separate major sections by 32 points. Keep the active exercise and its Add Set action together. Let charts collapse to an honest empty explanation when too few readings exist.
+Main reading screens use one scroll column with regular side inset and full-width content inside it. Overview, Training, and Body cap their reading columns at 640 points on wide displays. `GlassCard` and `SolidCard` are historical code names for open sections: each spans the column, adds vertical breathing room, and draws a one-point rule at its top. Content within a section usually follows the regular spacing step; small comparisons use the tight step.
+
+The overview starts with a dated heading and native period picker, then presents goal, exercise, and training-volume evidence in ruled sections. Larger Dynamic Type can stack metric comparisons vertically. Training, live sets, history, Body, and data tools use the same open-section grammar where they present records. Native `List` and `Form` screens keep grouped rows for editing and settings. Scrolling screens reserve space for the native bottom timer accessory when shown.
 
 ## Elevation & Depth
 
-Solid tonal layers separate content from the canvas without shadows. Reserve system glass for native navigation, the floating workout plus button, and the timer accessory.
+The reading canvas and ruled records are flat, without custom shadows. Fine rules and subtle tonal differences establish hierarchy. Native glass remains on system navigation, the Training add action, and the rest timer accessory; it follows iOS behavior rather than becoming a background material for every record.
 
 ## Shapes
 
-Cards use a 16-point radius, controls 12 points, and small labels 8 points. Group form rows into one rounded surface with subtle native separators.
+Open records have square edges and no enclosing card. Grouped form rows retain gently rounded outer corners; only the first and last rows round in a multirow group. Small neutral badges use a tighter radius. Native buttons, segmented pickers, tabs, sheets, and other controls keep their system shapes.
 
 ## Components
 
-Primary actions use native bordered prominent buttons in the adaptive accent. Secondary actions use bordered or plain buttons. Record cards use the shared `GlassCard` or `SolidCard` implementation in `Sources/DesignSystem/GlassCard.swift`; both render a solid surface. Forms use native controls and `glassRow()` for grouped rows. The Training plus button opens saved, new, and free workout actions.
+### Ruled records
+
+`GlassCard` and `SolidCard` provide an open, full-width section with regular vertical padding and a fine top rule. A semantic tint may replace a `GlassCard` rule for a specific status. They do not paint a card surface.
+
+### Headings
+
+`FieldGuidePageTitle` supplies the bold serif page heading and accessibility header trait. `SectionHeader` pairs a semibold serif section title with an optional quiet footnote subtitle.
+
+### Actions and navigation
+
+Primary actions use native bordered prominent controls with the adaptive clay accent. Secondary actions use native bordered or plain styles. The root uses a native three-tab bar. Training’s add button and the rest timer keep native glass treatments.
+
+### Badges and grouped rows
+
+`GlassBadge` uses a compact raised-neutral fill for categories and counts. `glassRow()` places native list rows on an inset paper surface with outer corner rounding and separators between adjacent rows. Forms use `glassFormBackground()` on the matte canvas.
 
 ## Do's and Don'ts
 
-- **Do** place dates and units next to measured values.
-- **Do** show goal, exercise, and training volume trends from stored records.
-- **Don't** use a shifting gradient or colored glass behind workout content.
-- **Don't** imply a period changed when it contains no new reading.
+### Do:
+
+- **Do** place units and dates with measured values and use monospaced digits where comparison matters.
+- **Do** show goal, exercise, and volume changes from stored records and explain missing readings honestly.
+- **Do** keep native controls and Dynamic Type behavior in form and training flows.
+
+### Don't:
+
+- **Don't** restore repeated enclosed cards on reading screens; use the ruled section treatment.
+- **Don't** use clay as category decoration or imply a trend changed without a reading in the period.
+- **Don't** add illustrative values, slogans, or anatomy art from the approved comp as product data.

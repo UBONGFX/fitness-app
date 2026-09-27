@@ -1,0 +1,145 @@
+{
+  "schemaVersion": 2,
+  "generatedAt": "2026-09-27T19:29:04Z",
+  "title": "Design System: Fitness App",
+  "extensions": {
+    "colorMeta": {
+      "clay-light": {
+        "role": "primary",
+        "displayName": "Clay Orange",
+        "canonical": "color(display-p3 0.785 0.315 0.185)"
+      },
+      "clay-dark": {
+        "role": "primary",
+        "displayName": "Light Clay",
+        "canonical": "color(display-p3 0.975 0.575 0.475)"
+      },
+      "paper-light": {
+        "role": "neutral",
+        "displayName": "Matte Paper",
+        "canonical": "#F3F2EB"
+      },
+      "paper-dark": {
+        "role": "neutral",
+        "displayName": "Dark Olive Paper",
+        "canonical": "#161B18"
+      },
+      "surface-light": {
+        "role": "neutral",
+        "displayName": "Inset Paper",
+        "canonical": "#FBFAF4"
+      },
+      "surface-dark": {
+        "role": "neutral",
+        "displayName": "Dark Inset Paper",
+        "canonical": "#222824"
+      },
+      "raised-light": {
+        "role": "neutral",
+        "displayName": "Raised Neutral",
+        "canonical": "#E3E4DB"
+      },
+      "raised-dark": {
+        "role": "neutral",
+        "displayName": "Dark Raised Neutral",
+        "canonical": "#323833"
+      },
+      "rule-light": {
+        "role": "neutral",
+        "displayName": "Olive Rule",
+        "canonical": "rgba(38, 54, 46, 0.32)"
+      },
+      "rule-dark": {
+        "role": "neutral",
+        "displayName": "Light Olive Rule",
+        "canonical": "rgba(204, 212, 196, 0.24)"
+      }
+    },
+    "typographyMeta": {
+      "page-title": {
+        "displayName": "Editorial Page Title",
+        "purpose": "Dynamic Type largeTitle in the iOS system serif; page headings."
+      },
+      "section-title": {
+        "displayName": "Editorial Section Title",
+        "purpose": "Dynamic Type title3 or title2 for section and prominent record headings."
+      },
+      "body": {
+        "displayName": "Native Reading Text",
+        "purpose": "System sans text styles for forms, actions, and dense workout data."
+      },
+      "measured-data": {
+        "displayName": "Measured Data",
+        "purpose": "Native text styles with monospaced digits for values and comparisons."
+      }
+    },
+    "shadows": [],
+    "motion": []
+  },
+  "components": [
+    {
+      "name": "Ruled Record",
+      "kind": "card",
+      "refersTo": "ruled-record",
+      "description": "Open, full-width record; the historical SwiftUI names are GlassCard and SolidCard.",
+      "html": "<section class=\"ds-ruled-record\"><h2>Trainingsvolumen</h2><p>Deine protokollierten Sätze im gewählten Zeitraum.</p></section>",
+      "css": ".ds-ruled-record{background:#F3F2EB;color:#161B18;border-top:1px solid rgba(38,54,46,.32);padding:16px 0;max-width:100%}.ds-ruled-record h2{font:600 21px ui-serif,serif;margin:0 0 8px}.ds-ruled-record p{font:400 15px system-ui;margin:0;opacity:.7}@media(prefers-color-scheme:dark){.ds-ruled-record{background:#161B18;color:#F3F2EB;border-top-color:rgba(204,212,196,.24)}}"
+    },
+    {
+      "name": "Page Title",
+      "kind": "custom",
+      "description": "Bold system-serif page heading; native Dynamic Type supplies the rendered size.",
+      "html": "<h1 class=\"ds-page-title\">Fortschritt</h1>",
+      "css": ".ds-page-title{font:700 34px ui-serif,serif;letter-spacing:-.5px;line-height:1.1;color:#161B18;margin:0}@media(prefers-color-scheme:dark){.ds-page-title{color:#F3F2EB}}"
+    },
+    {
+      "name": "Neutral Badge",
+      "kind": "chip",
+      "refersTo": "neutral-badge",
+      "description": "Small category or count label on the raised neutral surface.",
+      "html": "<span class=\"ds-neutral-badge\">3 Sätze</span>",
+      "css": ".ds-neutral-badge{display:inline-block;background:#E3E4DB;color:#161B18;border-radius:8px;padding:4px 10px;font:600 11px system-ui}@media(prefers-color-scheme:dark){.ds-neutral-badge{background:#323833;color:#F3F2EB}}"
+    },
+    {
+      "name": "Grouped Form Row",
+      "kind": "custom",
+      "refersTo": "grouped-form-row",
+      "description": "Inset native List or Form row; adjacent rows share one rounded group.",
+      "html": "<div class=\"ds-grouped-row\" tabindex=\"0\"><span>Gewicht</span><span>82,5 kg</span></div>",
+      "css": ".ds-grouped-row{display:flex;justify-content:space-between;gap:16px;background:#FBFAF4;color:#161B18;border-radius:12px;padding:16px;font:400 16px system-ui}.ds-grouped-row span:last-child{opacity:.7}.ds-grouped-row:hover{background:#E3E4DB}.ds-grouped-row:focus-visible{outline:2px solid color(display-p3 .785 .315 .185);outline-offset:2px}@media(prefers-color-scheme:dark){.ds-grouped-row{background:#222824;color:#F3F2EB}.ds-grouped-row:hover{background:#323833}.ds-grouped-row:focus-visible{outline-color:color(display-p3 .975 .575 .475)}}"
+    }
+  ],
+  "narrative": {
+    "northStar": "Training Field Guide",
+    "overview": "Personal progress reads as an open, measured page. Warm matte paper, olive ink, and thin rules support dated evidence. Editorial headings orient readers while native iOS controls and system text carry workout and form interactions.",
+    "keyCharacteristics": [
+      "full-width ruled records",
+      "warm adaptive neutrals",
+      "clay accent for actions and measured change",
+      "native iOS controls and tab chrome",
+      "monospaced measured digits"
+    ],
+    "rules": [
+      {
+        "name": "The Measured Accent Rule",
+        "body": "Use clay for actions and actual progress; keep rules, category badges, and supporting labels neutral.",
+        "section": "colors"
+      },
+      {
+        "name": "The Editorial Heading Rule",
+        "body": "Serif type orients a page or record; dense set data and form controls stay in system sans.",
+        "section": "typography"
+      }
+    ],
+    "dos": [
+      "Place units and dates with measured values; use monospaced digits where comparison matters.",
+      "Show goal, exercise, and volume changes from stored records and explain missing readings honestly.",
+      "Keep native controls and Dynamic Type behavior in form and training flows."
+    ],
+    "donts": [
+      "Restore repeated enclosed cards on reading screens.",
+      "Use clay as category decoration or imply a trend changed without a reading in the period.",
+      "Add illustrative values, slogans, or anatomy art from the approved comp as product data."
+    ]
+  }
+}
