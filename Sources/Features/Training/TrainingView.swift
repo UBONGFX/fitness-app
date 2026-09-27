@@ -7,6 +7,7 @@ struct TrainingView: View {
     @Environment(\.modelContext) private var context
     @Environment(SaveReporter.self) private var saveReporter
     @Environment(RestTimer.self) private var restTimer
+    @Environment(\.dynamicTypeSize) private var dynamicTypeSize
     @Query private var allDays: [PlanDay]
     @Query(sort: \WorkoutSession.startedAt, order: .reverse)
     private var sessions: [WorkoutSession]
@@ -24,6 +25,17 @@ struct TrainingView: View {
         ActualVolume.sessions(in: ActualVolume.week(containing: Date()), from: sessions)
     }
     private var muscleVolume: [VolumeRow] { ActualVolume.rows(from: thisWeek) }
+    private var loggedExercises: [Exercise] {
+        var seen = Set<UUID>()
+        return SessionHistory.finished(sessions)
+            .flatMap(\.sortedExercises)
+            .compactMap { entry in
+                guard !entry.sortedSets.isEmpty, let exercise = entry.exercise,
+                      seen.insert(exercise.id).inserted
+                else { return nil }
+                return exercise
+            }
+    }
     private var weeklyLoads: [WeeklyLoad] {
         let start = ActualVolume.week(containing: Date()).start
         return (0..<6).reversed().compactMap { offset in
@@ -49,12 +61,25 @@ struct TrainingView: View {
             .background(AppBackground())
             .navigationTitle(activeSession?.dayName ?? "Training")
             .navigationBarTitleDisplayMode(activeSession == nil ? .large : .inline)
+            .toolbar {
+                if activeSession == nil && !loggedExercises.isEmpty {
+                    ToolbarItem(placement: .primaryAction) {
+                        NavigationLink {
+                            ExerciseHistoryIndexView(exercises: loggedExercises, sessions: sessions)
+                        } label: {
+                            Image(systemName: "chart.xyaxis.line")
+                        }
+                        .accessibilityLabel("Übungsfortschritt")
+                        .accessibilityIdentifier("openExerciseProgress")
+                    }
+                }
+            }
             .sheet(isPresented: $showingActions, onDismiss: performPendingAction) {
                 WorkoutActionsSheet(hasTemplates: !templates.isEmpty) { action in
                     pendingAction = action
                     showingActions = false
                 }
-                .presentationDetents([.height(350)])
+                .presentationDetents(dynamicTypeSize.isAccessibilitySize ? [.large] : [.height(350)])
                 .presentationDragIndicator(.visible)
             }
             .sheet(isPresented: $showingPicker) { savedWorkoutPicker }
@@ -78,8 +103,9 @@ struct TrainingView: View {
     private var libraryScreen: some View {
         ScrollView {
             VStack(alignment: .leading, spacing: Theme.Spacing.section) {
-                volumeSection
                 workoutSection
+                volumeSection
+                if !loggedExercises.isEmpty { exerciseHistorySection }
                 HistoryCard(sessions: sessions)
             }
             .padding(.horizontal, Theme.Spacing.regular)
@@ -88,18 +114,25 @@ struct TrainingView: View {
         }
         .scrollEdgeEffectStyle(.soft, for: .top)
         .clearsBottomAccessory()
-        .overlay(alignment: .bottomTrailing) {
-            Button {
-                showingActions = true
-            } label: {
-                Image(systemName: "plus")
-                    .font(.title2.weight(.medium))
-                    .frame(width: 62, height: 62)
+        .safeAreaInset(edge: .bottom, spacing: 0) {
+            HStack {
+                Spacer()
+                Button {
+                    showingActions = true
+                } label: {
+                    Image(systemName: "plus")
+                        .font(.title2.weight(.medium))
+                        .frame(width: 62, height: 62)
+                }
+                .buttonStyle(.glass)
+                .accessibilityLabel("Workout starten oder erstellen")
+                .accessibilityIdentifier("workoutPlus")
+                Spacer()
             }
-            .buttonStyle(.glass)
-            .accessibilityLabel("Workout starten oder erstellen")
-            .accessibilityIdentifier("workoutPlus")
-            .padding(Theme.Spacing.loose)
+            .padding(.horizontal, Theme.Spacing.loose)
+            .padding(.top, Theme.Spacing.tight)
+            .padding(.bottom, Theme.Spacing.tight)
+            .background(AppBackground())
         }
     }
 
@@ -208,40 +241,76 @@ struct TrainingView: View {
                 }
             } else {
                 ForEach(templates) { template in
-                    SolidCard {
-                        HStack(alignment: .center, spacing: Theme.Spacing.regular) {
-                            Button {
-                                selectedTemplate = template
-                            } label: {
-                                VStack(alignment: .leading, spacing: 6) {
-                                    Text(template.name)
-                                        .font(.headline)
-                                        .foregroundStyle(.primary)
-                                    Text("\(template.sortedExercises.count) Übungen · \(template.totalSets) Sätze")
-                                        .font(.caption)
-                                        .foregroundStyle(.secondary)
-                                    Text(lastCompletedText(for: template))
-                                        .font(.caption2)
-                                        .foregroundStyle(.secondary)
-                                }
-                                .frame(maxWidth: .infinity, alignment: .leading)
-                                .contentShape(Rectangle())
-                            }
-                            .buttonStyle(.plain)
-                            .accessibilityIdentifier("workoutDetail-\(template.name)")
-
-                            Button {
-                                start(template)
-                            } label: {
-                                Label("Start", systemImage: "play.fill")
-                                    .font(.subheadline.weight(.semibold))
-                            }
-                            .buttonStyle(.borderedProminent)
-                            .accessibilityLabel("\(template.name) starten")
-                            .accessibilityIdentifier("start-\(template.name)")
-                        }
-                    }
+                    workoutCard(template)
                 }
+            }
+        }
+    }
+
+    private func workoutCard(_ template: PlanDay) -> some View {
+        SolidCard {
+            if dynamicTypeSize.isAccessibilitySize {
+                VStack(alignment: .leading, spacing: Theme.Spacing.regular) {
+                    workoutDetailButton(template)
+                    workoutStartButton(template)
+                }
+            } else {
+                HStack(alignment: .center, spacing: Theme.Spacing.regular) {
+                    workoutDetailButton(template)
+                    workoutStartButton(template)
+                }
+            }
+        }
+    }
+
+    private func workoutDetailButton(_ template: PlanDay) -> some View {
+        Button {
+            selectedTemplate = template
+        } label: {
+            VStack(alignment: .leading, spacing: 6) {
+                Text(template.name)
+                    .font(.headline)
+                    .foregroundStyle(.primary)
+                Text("\(template.sortedExercises.count) Übungen · \(template.totalSets) Sätze")
+                    .font(.caption)
+                    .foregroundStyle(.secondary)
+                Text(lastCompletedText(for: template))
+                    .font(.caption2)
+                    .foregroundStyle(.secondary)
+            }
+            .frame(maxWidth: .infinity, alignment: .leading)
+            .contentShape(Rectangle())
+        }
+        .buttonStyle(.plain)
+        .accessibilityIdentifier("workoutDetail-\(template.name)")
+    }
+
+    private func workoutStartButton(_ template: PlanDay) -> some View {
+        Button {
+            start(template)
+        } label: {
+            Label("Start", systemImage: "play.fill")
+                .font(.subheadline.weight(.semibold))
+        }
+        .buttonStyle(.borderedProminent)
+        .accessibilityLabel("\(template.name) starten")
+        .accessibilityIdentifier("start-\(template.name)")
+    }
+
+    private var exerciseHistorySection: some View {
+        VStack(alignment: .leading, spacing: Theme.Spacing.regular) {
+            HStack(alignment: .firstTextBaseline) {
+                Text("Übungsfortschritt")
+                    .font(.title2.weight(.bold))
+                Spacer()
+                NavigationLink("Alle") {
+                    ExerciseHistoryIndexView(exercises: loggedExercises, sessions: sessions)
+                }
+                .font(.caption)
+                .accessibilityIdentifier("allExerciseProgress")
+            }
+            ForEach(loggedExercises.prefix(3)) { exercise in
+                ExerciseHistoryLink(exercise: exercise, sessions: sessions)
             }
         }
     }
@@ -311,6 +380,86 @@ struct TrainingView: View {
         context.insert(WorkoutSession(dayName: "Freies Training", category: .general))
         restTimer.prepareNotifications()
         saveReporter.perform("Training starten") { try context.save() }
+    }
+}
+
+private struct ExerciseHistoryIndexView: View {
+    let exercises: [Exercise]
+    let sessions: [WorkoutSession]
+    @State private var search = ""
+
+    private var filtered: [Exercise] {
+        search.isEmpty ? exercises : exercises.filter {
+            $0.name.localizedCaseInsensitiveContains(search)
+        }
+    }
+
+    var body: some View {
+        ScrollView {
+            LazyVStack(spacing: Theme.Spacing.regular) {
+                ForEach(filtered) { exercise in
+                    ExerciseHistoryLink(exercise: exercise, sessions: sessions)
+                }
+            }
+            .padding(Theme.Spacing.regular)
+        }
+        .searchable(text: $search, prompt: "Geloggte Übung suchen")
+        .background(AppBackground())
+        .navigationTitle("Übungsfortschritt")
+        .navigationBarTitleDisplayMode(.inline)
+        .overlay {
+            if filtered.isEmpty {
+                ContentUnavailableView.search(text: search)
+            }
+        }
+    }
+}
+
+private struct ExerciseHistoryLink: View {
+    let exercise: Exercise
+    let sessions: [WorkoutSession]
+
+    private var entries: [ExerciseHistoryEntry] {
+        SessionHistory.entries(for: exercise.id, in: sessions)
+    }
+
+    var body: some View {
+        NavigationLink {
+            ExerciseProgressView(
+                exerciseName: exercise.name,
+                exerciseID: exercise.id,
+                sessions: sessions
+            )
+        } label: {
+            SolidCard {
+                HStack(spacing: Theme.Spacing.regular) {
+                    VStack(alignment: .leading, spacing: 4) {
+                        Text(exercise.name)
+                            .font(.headline)
+                            .foregroundStyle(.primary)
+                            .lineLimit(2)
+                        Text("\(entries.count) \(entries.count == 1 ? "Einheit" : "Einheiten") · zuletzt \(entries.first?.date.formatted(.dateTime.day().month(.abbreviated)) ?? "—")")
+                            .font(.caption)
+                            .foregroundStyle(.secondary)
+                    }
+                    Spacer(minLength: Theme.Spacing.tight)
+                    VStack(alignment: .trailing, spacing: 4) {
+                        Text(entries.first?.setsAtWorkingWeight.first?.summary ?? "—")
+                            .font(.subheadline.weight(.semibold).monospacedDigit())
+                            .foregroundStyle(.tint)
+                            .lineLimit(1)
+                            .minimumScaleFactor(0.8)
+                        if let change = SessionHistory.weightTrend(entries) {
+                            Text("\(ExerciseProgress.signed(change)) seit Start")
+                                .font(.caption2.monospacedDigit())
+                                .foregroundStyle(.secondary)
+                        }
+                    }
+                }
+            }
+        }
+        .buttonStyle(.plain)
+        .accessibilityIdentifier("exerciseProgress-\(exercise.name)")
     }
 }
 
