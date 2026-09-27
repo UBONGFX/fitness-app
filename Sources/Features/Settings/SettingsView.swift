@@ -1,7 +1,7 @@
 import SwiftData
 import SwiftUI
 
-/// Everything that is not training: the profile, notifications, sync and data.
+/// Profile, appearance, notifications and user-managed data.
 ///
 /// Reached from the account button rather than from a tab. A tab is for
 /// something you visit during a workout; settings are something you visit twice
@@ -11,10 +11,7 @@ struct SettingsView: View {
 
     @Query private var measurements: [BodyMeasurement]
     @Query private var sessions: [WorkoutSession]
-    @Query private var plans: [WorkoutPlan]
-
     @State private var name = UserProfile.name
-    @State private var syncState = SyncStatus.configured
     @State private var notificationStatus: NotificationAuthorisation = .unknown
     @State private var wantsNotifications = UserProfile.wantsRestNotifications
     @Binding var appearance: AppAppearance
@@ -57,16 +54,6 @@ struct SettingsView: View {
                     .glassRow(.middle)
 
                     row(
-                        "iCloud-Sync",
-                        systemImage: "icloud",
-                        detail: syncState.title,
-                        identifier: "openSync"
-                    ) {
-                        SyncStatusView(state: syncState)
-                    }
-                    .glassRow(.middle)
-
-                    row(
                         "Daten",
                         systemImage: "square.and.arrow.up",
                         detail: dataDetail,
@@ -78,7 +65,7 @@ struct SettingsView: View {
                 } header: {
                     Text("Allgemein")
                 } footer: {
-                    Text("Export und Import findest du unter „Daten“.")
+                    Text("Deine Daten bleiben auf diesem Gerät. Export und Import findest du unter „Daten“.")
                 }
             }
             .glassFormBackground()

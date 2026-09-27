@@ -287,7 +287,8 @@ struct DataView: View {
                 )
                 row("Körpermessungen", measurements.count)
                 row("Ziele", goals.count)
-                row("Trainingspläne", plans.count)
+                row("Gespeicherte Workouts", WorkoutLibrary.templates(in: allDays).count)
+                if !plans.isEmpty { row("Ältere Trainingspläne", plans.count) }
                 row("Übungen", exercises.count)
                 row("Einheiten", sessions.count)
                 row("Geloggte Sätze", sessions.reduce(0) { $0 + $1.completedSets })
