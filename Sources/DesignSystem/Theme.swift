@@ -1,7 +1,6 @@
 import SwiftUI
 
-/// Shared layout constants. Values are points; spacing scales with Dynamic Type
-/// through the system fonts used on top of them, not through hardcoded sizes.
+/// Shared measurements for the open, ruled Field Guide interface.
 enum Theme {
     enum Spacing {
         static let tight: CGFloat = 8
@@ -16,31 +15,31 @@ enum Theme {
         static let badge: CGFloat = 8
     }
 
-    /// The logbook uses tonal layers for depth. Its one accent comes from the
-    /// adaptive AccentColor asset and is reserved for actions and progress.
+    /// Warm paper and olive ink form the canvas. The adaptive clay accent is
+    /// reserved for actions and progress.
     enum Palette {
         static func canvas(_ scheme: ColorScheme) -> Color {
             scheme == .dark
-                ? Color(red: 0.070, green: 0.080, blue: 0.085)
-                : Color(red: 0.960, green: 0.968, blue: 0.965)
+                ? Color(red: 0.085, green: 0.105, blue: 0.095)
+                : Color(red: 0.953, green: 0.949, blue: 0.920)
         }
 
         static func surface(_ scheme: ColorScheme) -> Color {
             scheme == .dark
-                ? Color(red: 0.125, green: 0.145, blue: 0.150)
-                : Color.white
+                ? Color(red: 0.135, green: 0.155, blue: 0.140)
+                : Color(red: 0.985, green: 0.981, blue: 0.955)
         }
 
         static func raised(_ scheme: ColorScheme) -> Color {
             scheme == .dark
-                ? Color(red: 0.170, green: 0.190, blue: 0.195)
-                : Color(red: 0.915, green: 0.935, blue: 0.927)
+                ? Color(red: 0.195, green: 0.220, blue: 0.200)
+                : Color(red: 0.890, green: 0.895, blue: 0.860)
         }
 
         static func rule(_ scheme: ColorScheme) -> Color {
             scheme == .dark
-                ? Color.white.opacity(0.10)
-                : Color.black.opacity(0.09)
+                ? Color(red: 0.80, green: 0.83, blue: 0.77).opacity(0.24)
+                : Color(red: 0.15, green: 0.21, blue: 0.18).opacity(0.32)
         }
     }
 }

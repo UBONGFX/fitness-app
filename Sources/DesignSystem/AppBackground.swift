@@ -1,6 +1,6 @@
 import SwiftUI
 
-/// Quiet logbook canvas behind solid records and native navigation chrome.
+/// Matte Field Guide canvas behind ruled content and native controls.
 struct AppBackground: View {
     @Environment(\.colorScheme) private var colorScheme
 
