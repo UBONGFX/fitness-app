@@ -59,7 +59,7 @@ struct PlanDetailView: View {
                 HStack(alignment: .firstTextBaseline) {
                     VStack(alignment: .leading, spacing: 4) {
                         Text(plan.name)
-                            .font(.title2.weight(.bold))
+                            .font(.system(.title2, design: .serif).weight(.semibold))
                         if !plan.focus.isEmpty {
                             Text(plan.focus)
                                 .font(.subheadline)

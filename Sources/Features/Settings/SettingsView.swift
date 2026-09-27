@@ -20,6 +20,11 @@ struct SettingsView: View {
         NavigationStack {
             List {
                 Section {
+                    FieldGuidePageTitle(title: "Einstellungen")
+                        .listRowBackground(Color.clear)
+                        .listRowSeparator(.hidden)
+                }
+                Section {
                     NavigationLink {
                         ProfileView(name: $name)
                     } label: {
@@ -69,7 +74,7 @@ struct SettingsView: View {
                 }
             }
             .glassFormBackground()
-            .navigationTitle("Einstellungen")
+            .navigationTitle("")
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {
                 ToolbarItem(placement: .cancellationAction) {

@@ -49,6 +49,7 @@ struct ExerciseProgressView: View {
         .background(AppBackground())
         .navigationTitle(exerciseName)
         .navigationBarTitleDisplayMode(.inline)
+        .toolbar(.visible, for: .navigationBar)
     }
 
     // MARK: - Headline

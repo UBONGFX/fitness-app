@@ -44,6 +44,7 @@ struct DataView: View {
             ScrollView {
                 GlassEffectContainer(spacing: Theme.Spacing.regular) {
                     VStack(spacing: Theme.Spacing.regular) {
+                        FieldGuidePageTitle(title: "Daten")
                         exportCard
                         importCard
                         healthCard
@@ -61,7 +62,7 @@ struct DataView: View {
             .scrollEdgeEffectStyle(.soft, for: .top)
             .clearsBottomAccessory()
             .background(AppBackground())
-            .navigationTitle("Daten")
+            .navigationTitle("")
             .fileImporter(
                 isPresented: $showingImporter,
                 allowedContentTypes: [.json]

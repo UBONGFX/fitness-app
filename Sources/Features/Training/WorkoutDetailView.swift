@@ -19,7 +19,7 @@ struct WorkoutDetailView: View {
                 SolidCard {
                     VStack(alignment: .leading, spacing: Theme.Spacing.regular) {
                         Text(template.name)
-                            .font(.title2.weight(.bold))
+                            .font(.system(.title2, design: .serif).weight(.semibold))
                         if !template.focus.isEmpty {
                             Text(template.focus)
                                 .font(.subheadline)
@@ -42,7 +42,7 @@ struct WorkoutDetailView: View {
                 }
 
                 Text("Übungen")
-                    .font(.title2.weight(.bold))
+                    .font(.system(.title2, design: .serif).weight(.semibold))
                     .padding(.top, Theme.Spacing.tight)
 
                 if template.sortedExercises.isEmpty {

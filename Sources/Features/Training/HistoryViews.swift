@@ -157,7 +157,7 @@ struct SessionDetailView: View {
                                 VStack(alignment: .leading, spacing: Theme.Spacing.tight) {
                                     HStack {
                                         Text(entry.name)
-                                            .font(.headline)
+                                            .font(.system(.title3, design: .serif).weight(.semibold))
                                         Spacer(minLength: Theme.Spacing.tight)
                                         Image(systemName: "chevron.right")
                                             .font(.caption2)

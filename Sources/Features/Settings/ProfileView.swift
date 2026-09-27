@@ -112,7 +112,7 @@ struct ProfileView: View {
         VStack(spacing: Theme.Spacing.tight) {
             AccountAvatar(initials: UserProfile.initials, size: 88)
             Text(name.isEmpty ? "Ohne Namen" : name)
-                .font(.title3.weight(.semibold))
+                .font(.system(.title2, design: .serif).weight(.semibold))
             Text(UserProfile.heightText)
                 .font(.caption)
                 .foregroundStyle(.secondary)

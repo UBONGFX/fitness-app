@@ -79,7 +79,7 @@ struct MetricChartCard: View {
         HStack(alignment: .firstTextBaseline) {
             VStack(alignment: .leading, spacing: 2) {
                 Text("Verlauf")
-                    .font(.title3.weight(.semibold))
+                    .font(.system(.title2, design: .serif).weight(.semibold))
                 if let change {
                     let sign = change > 0 ? "+" : ""
                     Text("\(sign)\(change, format: .number.precision(.fractionLength(0...1))) \(metric.unit) seit Start")

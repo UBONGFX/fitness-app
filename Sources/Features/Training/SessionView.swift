@@ -209,7 +209,7 @@ private struct LoggedExerciseCard: View {
                 HStack(alignment: .firstTextBaseline) {
                     VStack(alignment: .leading, spacing: 1) {
                         Text(entry.name)
-                            .font(.headline)
+                            .font(.system(.title3, design: .serif).weight(.semibold))
                         if !entry.targetText.isEmpty {
                             Text("Ziel: \(entry.targetText)")
                                 .font(.caption)
