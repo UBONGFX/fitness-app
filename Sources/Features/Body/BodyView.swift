@@ -84,6 +84,10 @@ struct BodyView: View {
                 showingForm = true
             }
             .buttonStyle(.borderedProminent)
+
+            Button("Ziele festlegen") { showingGoals = true }
+                .buttonStyle(.bordered)
+                .accessibilityIdentifier("openGoals")
         }
     }
 

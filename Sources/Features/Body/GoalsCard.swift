@@ -44,9 +44,11 @@ struct GoalsCard: View {
                 HStack(alignment: .firstTextBaseline) {
                     SectionHeader(
                         title: "Ziele",
-                        subtitle: rows.isEmpty
-                            ? "Noch keine Messung zum Vergleichen"
-                            : "\(reachedCount) von \(rows.count) erreicht"
+                        subtitle: goals.isEmpty
+                            ? "Noch keine Ziele festgelegt"
+                            : rows.isEmpty
+                                ? "Noch keine Messung zum Vergleichen"
+                                : "\(reachedCount) von \(rows.count) erreicht"
                     )
                     Button("Ziele bearbeiten", systemImage: "slider.horizontal.3", action: onEdit)
                         .labelStyle(.iconOnly)
@@ -61,6 +63,12 @@ struct GoalsCard: View {
                         target: row.goal.formattedTarget,
                         evaluation: row.evaluation
                     )
+                }
+
+                if goals.isEmpty {
+                    Button("Ziele festlegen", action: onEdit)
+                        .buttonStyle(.bordered)
+                        .accessibilityIdentifier("openGoals")
                 }
             }
         }
