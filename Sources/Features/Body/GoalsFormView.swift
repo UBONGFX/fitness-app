@@ -54,24 +54,20 @@ struct GoalsFormView: View {
                     .glassRow()
                 }
 
-                Section("Primäre Ziele") {
-                    let metrics = selectedMetrics(for: .primary)
-                    if metrics.isEmpty {
+                let primaryMetrics = selectedMetrics(for: .primary)
+                if primaryMetrics.isEmpty {
+                    Section("Primäre Ziele") {
                         Text("Noch kein primäres Ziel")
                             .foregroundStyle(.secondary)
                             .glassRow()
                     }
-                    ForEach(metrics) { metric in
-                        goalRows(for: metric)
-                    }
+                } else {
+                    goalSections(primaryMetrics, title: "Primäre Ziele")
                 }
 
-                if !selectedMetrics(for: .secondary).isEmpty {
-                    Section("Sekundäre Ziele") {
-                        ForEach(selectedMetrics(for: .secondary)) { metric in
-                            goalRows(for: metric)
-                        }
-                    }
+                let secondaryMetrics = selectedMetrics(for: .secondary)
+                if !secondaryMetrics.isEmpty {
+                    goalSections(secondaryMetrics, title: "Sekundäre Ziele")
                 }
 
                 if drafts[.ffmi]?.isEnabled == true {
@@ -105,6 +101,7 @@ struct GoalsFormView: View {
                 }
             }
             .glassFormBackground()
+            .listSectionSpacing(.compact)
             .sheet(isPresented: $choosingHeight) {
                 HeightPickerSheet(centimetres: $heightCm)
                     .presentationDetents([.height(320)])
@@ -121,6 +118,17 @@ struct GoalsFormView: View {
                         .disabled(!loaded || hasInvalidValue)
                         .accessibilityIdentifier("saveGoals")
                 }
+            }
+        }
+    }
+
+    @ViewBuilder
+    private func goalSections(_ metrics: [BodyMetric], title: String) -> some View {
+        ForEach(Array(metrics.enumerated()), id: \.element) { index, metric in
+            Section {
+                goalRows(for: metric)
+            } header: {
+                if index == 0 { Text(title) }
             }
         }
     }

@@ -16,6 +16,12 @@ final class GoalsUITests: XCTestCase {
         XCTAssertTrue(app.buttons["editGoal-ffmi"].waitForExistence(timeout: 5))
         XCTAssertFalse(app.staticTexts["Körperfett"].exists)
         capture("Goal editor with primary FFMI observation")
+
+        app.buttons["addGoal"].tap()
+        app.buttons["Gewicht"].tap()
+        app.segmentedControls["goal-weight-priority"].buttons["Primär"].tap()
+        app.buttons["editGoal-weight"].tap()
+        capture("Goal editor with spaced primary goals")
         app.buttons["saveGoals"].tap()
 
         XCTAssertTrue(app.buttons["editGoals"].waitForExistence(timeout: 5))
@@ -46,6 +52,8 @@ final class GoalsUITests: XCTestCase {
 
         app.buttons["addGoal"].tap()
         app.buttons["Gewicht"].tap()
+        app.segmentedControls["goal-weight-priority"].buttons["Primär"].tap()
+        capture("Goal editor with two selected goals")
         let weightValue = app.textFields["goal-weight-lower"]
         XCTAssertTrue(weightValue.waitForExistence(timeout: 5))
         weightValue.tap()
