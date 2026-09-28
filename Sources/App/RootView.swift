@@ -20,6 +20,8 @@ struct RootView: View {
     @Environment(\.modelContext) private var context
     @Environment(\.colorScheme) private var colorScheme
     @Environment(\.dynamicTypeSize) private var dynamicTypeSize
+    @Environment(\.horizontalSizeClass) private var horizontalSizeClass
+    @Environment(\.accessibilityReduceMotion) private var reduceMotion
 
     @Query(filter: #Predicate<WorkoutSession> { $0.endedAt == nil })
     private var activeSessions: [WorkoutSession]
@@ -36,6 +38,7 @@ struct RootView: View {
     @State private var appearance = UserProfile.appearance
     @State private var showingWorkoutActions = false
     @State private var showingFinishConfirmation = false
+    @AccessibilityFocusState private var finishTitleFocused: Bool
 
     private var showAccessory: Bool {
         restTimer.isRunning || (!activeSessions.isEmpty && selection == .training)
@@ -46,32 +49,45 @@ struct RootView: View {
     }
 
     var body: some View {
-        TabView(selection: $selection) {
-            Tab("Übersicht", systemImage: "square.grid.2x2", value: AppTab.home) {
-                // The overview links into the other tabs, so it needs to move the
-                // selection rather than push a second copy of those screens.
-                HomeView(selectedTab: $selection, appearance: $appearance)
-                    .toolbar(.hidden, for: .tabBar)
+        ZStack {
+            TabView(selection: $selection) {
+                Tab("Übersicht", systemImage: "square.grid.2x2", value: AppTab.home) {
+                    // The overview links into the other tabs, so it needs to move the
+                    // selection rather than push a second copy of those screens.
+                    HomeView(selectedTab: $selection, appearance: $appearance)
+                        .toolbar(.hidden, for: .tabBar)
+                }
+                Tab("Training", systemImage: "figure.strengthtraining.traditional", value: AppTab.training) {
+                    TrainingView(
+                        showingActions: $showingWorkoutActions,
+                        showingFinishConfirmation: $showingFinishConfirmation
+                    )
+                        .toolbar(.hidden, for: .tabBar)
+                }
+                Tab("Körper", systemImage: "ruler", value: AppTab.body) {
+                    BodyView(isUsingFallbackStore: isUsingFallbackStore)
+                        .toolbar(.hidden, for: .tabBar)
+                }
             }
-            Tab("Training", systemImage: "figure.strengthtraining.traditional", value: AppTab.training) {
-                TrainingView(
-                    showingActions: $showingWorkoutActions,
-                    showingFinishConfirmation: $showingFinishConfirmation
-                )
-                    .toolbar(.hidden, for: .tabBar)
-            }
-            Tab("Körper", systemImage: "ruler", value: AppTab.body) {
-                BodyView(isUsingFallbackStore: isUsingFallbackStore)
-                    .toolbar(.hidden, for: .tabBar)
+            .safeAreaInset(edge: .bottom, spacing: 0) { bottomNavigation }
+            .accessibilityHidden(showingFinishConfirmation)
+
+            if selection == .training, showingFinishConfirmation,
+               let session = activeSessions.first {
+                finishModalOverlay(for: session)
+                    .transition(.opacity)
             }
         }
-        // On the whole tab view, not on a screen: a sheet presented from here
+        // On the root view, not on a screen: a sheet presented from here
         // would otherwise keep the system scheme while everything behind it
         // changed.
         .preferredColorScheme(appearance.colorScheme)
-        .safeAreaInset(edge: .bottom, spacing: 0) { bottomNavigation }
+        .animation(reduceMotion ? nil : .easeOut(duration: 0.18), value: showingFinishConfirmation)
         .onChange(of: selection) { _, newValue in
             if newValue != .training { showingFinishConfirmation = false }
+        }
+        .onChange(of: showingFinishConfirmation) { _, isShown in
+            finishTitleFocused = isShown
         }
         .environment(restTimer)
         .environment(saveReporter)
@@ -95,11 +111,6 @@ struct RootView: View {
     private var bottomNavigation: some View {
         GlassEffectContainer(spacing: Theme.Spacing.tight) {
             VStack(spacing: Theme.Spacing.tight) {
-                if selection == .training, showingFinishConfirmation,
-                   let session = activeSessions.first {
-                    finishConfirmation(for: session)
-                }
-
                 if showAccessory {
                     RestTimerAccessory(hasActiveSession: !activeSessions.isEmpty)
                         .padding(.vertical, Theme.Spacing.tight)
@@ -139,54 +150,79 @@ struct RootView: View {
         .padding(.bottom, 4)
     }
 
-    private func finishConfirmation(for session: WorkoutSession) -> some View {
-        HStack {
-            Spacer(minLength: 0)
+    private func finishModalOverlay(for session: WorkoutSession) -> some View {
+        ZStack {
+            Color.black.opacity(colorScheme == .dark ? 0.62 : 0.42)
+                .ignoresSafeArea()
+                .onTapGesture { showingFinishConfirmation = false }
+
             VStack(alignment: .leading, spacing: Theme.Spacing.regular) {
-                if dynamicTypeSize.isAccessibilitySize {
-                    VStack(alignment: .leading, spacing: 4) { finishSummary(for: session) }
-                    VStack(spacing: Theme.Spacing.tight) { finishActions(for: session) }
-                } else {
-                    HStack(alignment: .firstTextBaseline, spacing: Theme.Spacing.tight) {
-                        finishSummary(for: session)
+                HStack(alignment: .top, spacing: Theme.Spacing.tight) {
+                    Text("Training abschließen?")
+                        .font(.system(.title2, design: .serif).weight(.semibold))
+                        .accessibilityAddTraits(.isHeader)
+                        .accessibilityFocused($finishTitleFocused)
+                    Spacer(minLength: Theme.Spacing.tight)
+                    Button {
+                        showingFinishConfirmation = false
+                    } label: {
+                        Image(systemName: "xmark")
+                            .font(.footnote.weight(.semibold))
+                            .frame(width: 44, height: 44)
                     }
-                    HStack(spacing: Theme.Spacing.tight) { finishActions(for: session) }
-                        .frame(maxWidth: .infinity, alignment: .trailing)
+                    .buttonStyle(.plain)
+                    .accessibilityLabel("Schließen")
+                }
+
+                Text("\(session.dayName) · \(session.completedSets == 1 ? "1 Satz" : "\(session.completedSets) Sätze") · \(session.durationText)")
+                    .font(.subheadline.monospacedDigit())
+                    .foregroundStyle(.secondary)
+                    .fixedSize(horizontal: false, vertical: true)
+
+                Rectangle()
+                    .fill(Theme.Palette.rule(colorScheme))
+                    .frame(height: 1)
+                    .padding(.vertical, 4)
+
+                Text("Danach findest du die Einheit im Verlauf.")
+                    .font(.subheadline)
+                    .foregroundStyle(.secondary)
+
+                if horizontalSizeClass == .compact || dynamicTypeSize.isAccessibilitySize {
+                    VStack(spacing: Theme.Spacing.tight) { finishModalActions(for: session) }
+                } else {
+                    HStack(spacing: Theme.Spacing.tight) { finishModalActions(for: session) }
                 }
             }
-            .frame(maxWidth: 640)
-            Spacer(minLength: 0)
-        }
-        .padding(.horizontal, Theme.Spacing.regular)
-        .padding(.vertical, Theme.Spacing.regular)
-        .background(Theme.Palette.canvas(colorScheme))
-        .overlay(alignment: .top) {
-            Theme.Palette.rule(colorScheme).frame(height: 1)
+            .padding(Theme.Spacing.loose)
+            .frame(maxWidth: 440)
+            .background(Theme.Palette.surface(colorScheme))
+            .clipShape(RoundedRectangle(cornerRadius: Theme.Radius.card))
+            .shadow(color: .black.opacity(colorScheme == .dark ? 0.42 : 0.18), radius: 30, x: 0, y: 14)
+            .padding(Theme.Spacing.loose)
+            .accessibilityElement(children: .contain)
+            .accessibilityAction(.escape) { showingFinishConfirmation = false }
         }
     }
 
     @ViewBuilder
-    private func finishSummary(for session: WorkoutSession) -> some View {
-        Text("Training abschließen?")
-            .font(.system(.title3, design: .serif).weight(.semibold))
-            .accessibilityAddTraits(.isHeader)
-        if !dynamicTypeSize.isAccessibilitySize { Spacer(minLength: Theme.Spacing.tight) }
-        Text("\(session.completedSets == 1 ? "1 Satz" : "\(session.completedSets) Sätze") · \(session.durationText)")
-            .font(.footnote.monospacedDigit())
-            .foregroundStyle(.secondary)
-    }
+    private func finishModalActions(for session: WorkoutSession) -> some View {
+        Button {
+            showingFinishConfirmation = false
+        } label: {
+            Text("Weiter trainieren")
+                .frame(maxWidth: .infinity, minHeight: 44)
+        }
+        .buttonStyle(.bordered)
 
-    @ViewBuilder
-    private func finishActions(for session: WorkoutSession) -> some View {
-        Button("Weiter trainieren") { showingFinishConfirmation = false }
-            .buttonStyle(.bordered)
-            .frame(maxWidth: dynamicTypeSize.isAccessibilitySize ? .infinity : nil)
-
-        Button("Abschließen") { finish(session) }
-            .buttonStyle(.borderedProminent)
-            .frame(maxWidth: dynamicTypeSize.isAccessibilitySize ? .infinity : nil)
-            .accessibilityLabel("Training abschließen")
-            .accessibilityIdentifier("confirmFinishSession")
+        Button {
+            finish(session)
+        } label: {
+            Text("Training abschließen")
+                .frame(maxWidth: .infinity, minHeight: 44)
+        }
+        .buttonStyle(.borderedProminent)
+        .accessibilityIdentifier("confirmFinishSession")
     }
 
     private func finish(_ session: WorkoutSession) {
