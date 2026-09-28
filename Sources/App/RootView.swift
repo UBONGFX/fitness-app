@@ -17,6 +17,7 @@ enum AppTab: String, CaseIterable {
 struct RootView: View {
     var isUsingFallbackStore = false
 
+    @Environment(\.modelContext) private var context
     @Environment(\.colorScheme) private var colorScheme
     @Environment(\.dynamicTypeSize) private var dynamicTypeSize
 
@@ -34,6 +35,7 @@ struct RootView: View {
     @State private var saveReporter = SaveReporter()
     @State private var appearance = UserProfile.appearance
     @State private var showingWorkoutActions = false
+    @State private var showingFinishConfirmation = false
 
     private var showAccessory: Bool {
         restTimer.isRunning || (!activeSessions.isEmpty && selection == .training)
@@ -52,7 +54,10 @@ struct RootView: View {
                     .toolbar(.hidden, for: .tabBar)
             }
             Tab("Training", systemImage: "figure.strengthtraining.traditional", value: AppTab.training) {
-                TrainingView(showingActions: $showingWorkoutActions)
+                TrainingView(
+                    showingActions: $showingWorkoutActions,
+                    showingFinishConfirmation: $showingFinishConfirmation
+                )
                     .toolbar(.hidden, for: .tabBar)
             }
             Tab("Körper", systemImage: "ruler", value: AppTab.body) {
@@ -65,6 +70,9 @@ struct RootView: View {
         // changed.
         .preferredColorScheme(appearance.colorScheme)
         .safeAreaInset(edge: .bottom, spacing: 0) { bottomNavigation }
+        .onChange(of: selection) { _, newValue in
+            if newValue != .training { showingFinishConfirmation = false }
+        }
         .environment(restTimer)
         .environment(saveReporter)
         // A failed write used to vanish silently; now it surfaces here.
@@ -87,6 +95,11 @@ struct RootView: View {
     private var bottomNavigation: some View {
         GlassEffectContainer(spacing: Theme.Spacing.tight) {
             VStack(spacing: Theme.Spacing.tight) {
+                if selection == .training, showingFinishConfirmation,
+                   let session = activeSessions.first {
+                    finishConfirmation(for: session)
+                }
+
                 if showAccessory {
                     RestTimerAccessory(hasActiveSession: !activeSessions.isEmpty)
                         .padding(.vertical, Theme.Spacing.tight)
@@ -124,6 +137,65 @@ struct RootView: View {
         .padding(.horizontal, Theme.Spacing.regular)
         .padding(.top, Theme.Spacing.tight)
         .padding(.bottom, 4)
+    }
+
+    private func finishConfirmation(for session: WorkoutSession) -> some View {
+        HStack {
+            Spacer(minLength: 0)
+            VStack(alignment: .leading, spacing: Theme.Spacing.regular) {
+                if dynamicTypeSize.isAccessibilitySize {
+                    VStack(alignment: .leading, spacing: 4) { finishSummary(for: session) }
+                    VStack(spacing: Theme.Spacing.tight) { finishActions(for: session) }
+                } else {
+                    HStack(alignment: .firstTextBaseline, spacing: Theme.Spacing.tight) {
+                        finishSummary(for: session)
+                    }
+                    HStack(spacing: Theme.Spacing.tight) { finishActions(for: session) }
+                        .frame(maxWidth: .infinity, alignment: .trailing)
+                }
+            }
+            .frame(maxWidth: 640)
+            Spacer(minLength: 0)
+        }
+        .padding(.horizontal, Theme.Spacing.regular)
+        .padding(.vertical, Theme.Spacing.regular)
+        .background(Theme.Palette.canvas(colorScheme))
+        .overlay(alignment: .top) {
+            Theme.Palette.rule(colorScheme).frame(height: 1)
+        }
+    }
+
+    @ViewBuilder
+    private func finishSummary(for session: WorkoutSession) -> some View {
+        Text("Training abschließen?")
+            .font(.system(.title3, design: .serif).weight(.semibold))
+            .accessibilityAddTraits(.isHeader)
+        if !dynamicTypeSize.isAccessibilitySize { Spacer(minLength: Theme.Spacing.tight) }
+        Text("\(session.completedSets == 1 ? "1 Satz" : "\(session.completedSets) Sätze") · \(session.durationText)")
+            .font(.footnote.monospacedDigit())
+            .foregroundStyle(.secondary)
+    }
+
+    @ViewBuilder
+    private func finishActions(for session: WorkoutSession) -> some View {
+        Button("Weiter trainieren") { showingFinishConfirmation = false }
+            .buttonStyle(.bordered)
+            .frame(maxWidth: dynamicTypeSize.isAccessibilitySize ? .infinity : nil)
+
+        Button("Abschließen") { finish(session) }
+            .buttonStyle(.borderedProminent)
+            .frame(maxWidth: dynamicTypeSize.isAccessibilitySize ? .infinity : nil)
+            .accessibilityLabel("Training abschließen")
+            .accessibilityIdentifier("confirmFinishSession")
+    }
+
+    private func finish(_ session: WorkoutSession) {
+        session.endedAt = Date()
+        if saveReporter.perform("Training abschließen", { try context.save() }) {
+            showingFinishConfirmation = false
+        } else {
+            session.endedAt = nil
+        }
     }
 
     private func tabButton(_ tab: AppTab, title: String, symbol: String) -> some View {

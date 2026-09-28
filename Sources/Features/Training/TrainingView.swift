@@ -13,6 +13,7 @@ struct TrainingView: View {
     private var sessions: [WorkoutSession]
 
     @Binding var showingActions: Bool
+    @Binding var showingFinishConfirmation: Bool
     @State private var showingPicker = false
     @State private var showingCreator = false
     @State private var selectedTemplate: PlanDay?
@@ -53,7 +54,10 @@ struct TrainingView: View {
         NavigationStack {
             Group {
                 if let activeSession {
-                    SessionView(session: activeSession)
+                    SessionView(
+                        session: activeSession,
+                        showingFinishConfirmation: $showingFinishConfirmation
+                    )
                 } else {
                     libraryScreen
                 }

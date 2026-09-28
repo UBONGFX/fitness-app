@@ -119,7 +119,7 @@ Open records have square edges and no enclosing card. Grouped form rows retain g
 
 ### Actions and navigation
 
-Primary actions use native bordered prominent controls with the adaptive clay accent. Secondary actions use native bordered or plain styles. The bottom navigation uses a shared Liquid Glass capsule for Übersicht, Training, and Körper. On Training, a separate circular glass add button shares its row. The rest timer sits above the navigation in a glass capsule.
+Primary actions use native bordered prominent controls with the adaptive clay accent. Secondary actions use native bordered or plain styles. The bottom navigation uses a shared Liquid Glass capsule for Übersicht, Training, and Körper. On Training, a separate circular glass add button shares its row. The rest timer sits above the navigation in a glass capsule. Ending a session shows an inline confirmation area above the timer with options to continue or finish.
 
 ### Badges and grouped rows
 

@@ -13,10 +13,10 @@ struct SessionView: View {
     @Query(sort: \WorkoutSession.startedAt, order: .reverse)
     private var allSessions: [WorkoutSession]
     @Bindable var session: WorkoutSession
+    @Binding var showingFinishConfirmation: Bool
 
     @State private var editing: SetEditorTarget?
     @State private var showingExercisePicker = false
-    @State private var showingFinishConfirmation = false
 
     var body: some View {
         ScrollView {
@@ -70,20 +70,6 @@ struct SessionView: View {
         .sheet(isPresented: $showingExercisePicker) {
             SessionExercisePickerView(session: session)
         }
-        .confirmationDialog(
-            "Training abschließen?",
-            isPresented: $showingFinishConfirmation,
-            titleVisibility: .visible
-        ) {
-            Button("Training abschließen") { finish() }
-            Button("Weiter trainieren", role: .cancel) {}
-        } message: {
-            Text("\(completedSetText) · \(session.durationText). Danach findest du die Einheit im Verlauf.")
-        }
-    }
-
-    private var completedSetText: String {
-        session.completedSets == 1 ? "1 Satz" : "\(session.completedSets) Sätze"
     }
 
     private var summaryCard: some View {
@@ -144,11 +130,6 @@ struct SessionView: View {
     private func delete(_ set: LoggedSet, from entry: LoggedExercise) {
         context.delete(set)
         saveReporter.perform("Satz löschen") { try context.save() }
-    }
-
-    private func finish() {
-        session.endedAt = Date()
-        saveReporter.perform("Training beenden") { try context.save() }
     }
 }
 
