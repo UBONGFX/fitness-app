@@ -167,11 +167,14 @@ private struct SessionExercisePickerView: View {
                 Button("Neue Übung anlegen", systemImage: "plus.circle") {
                     showingNew = true
                 }
-                ForEach(available) { exercise in
+                .glassRow()
+                ForEach(Array(available.enumerated()), id: \.element.id) { index, exercise in
                     Button(exercise.name) { add(exercise) }
                         .accessibilityIdentifier("pickSession-\(exercise.name)")
+                        .glassRow(.of(index, count: available.count))
                 }
             }
+            .glassFormBackground()
             .searchable(text: $search, prompt: "Übung suchen")
             .navigationTitle("Übung hinzufügen")
             .toolbar {

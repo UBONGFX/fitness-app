@@ -15,6 +15,7 @@ struct CreateWorkoutView: View {
                 Section {
                     TextField("Name, z. B. Oberkörper", text: $name)
                         .accessibilityIdentifier("workoutName")
+                        .glassRow()
                 } footer: {
                     Text("Du kannst Übungen nach dem Erstellen hinzufügen. Das Workout hat keinen festen Wochentag.")
                 }

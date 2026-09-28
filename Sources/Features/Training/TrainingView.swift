@@ -321,7 +321,7 @@ struct TrainingView: View {
     private var savedWorkoutPicker: some View {
         NavigationStack {
             List {
-                ForEach(templates) { template in
+                ForEach(Array(templates.enumerated()), id: \.element.id) { index, template in
                     Button {
                         showingPicker = false
                         start(template)
@@ -338,8 +338,10 @@ struct TrainingView: View {
                                 .foregroundStyle(.tint)
                         }
                     }
+                    .glassRow(.of(index, count: templates.count))
                 }
             }
+            .glassFormBackground()
             .navigationTitle("Workout starten")
             .toolbar {
                 ToolbarItem(placement: .cancellationAction) {
