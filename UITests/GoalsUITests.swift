@@ -74,6 +74,34 @@ final class GoalsUITests: XCTestCase {
     }
 
     @MainActor
+    func testAllMeasurementsLinkClearsBottomNavigation() {
+        let app = XCUIApplication()
+        app.launchArguments += ["-startTab", "body", "-uiTesting"]
+        app.launch()
+
+        app.buttons["Erste Messung erfassen"].tap()
+        let weight = app.textFields["metric-weight"]
+        XCTAssertTrue(weight.waitForExistence(timeout: 5))
+        weight.tap()
+        weight.typeText("80")
+        app.buttons["Sichern"].tap()
+
+        let allMeasurements = app.buttons["openMeasurements"]
+        XCTAssertTrue(allMeasurements.waitForExistence(timeout: 5))
+        let overview = app.scrollViews.firstMatch
+        let navigation = app.buttons["Körper"]
+        for _ in 0..<5 where allMeasurements.frame.maxY >= navigation.frame.minY {
+            overview.swipeUp()
+        }
+        XCTAssertTrue(allMeasurements.isHittable)
+        XCTAssertLessThan(allMeasurements.frame.maxY, navigation.frame.minY)
+        capture("All measurements above bottom navigation")
+
+        allMeasurements.tap()
+        XCTAssertTrue(app.segmentedControls["bodySection"].buttons["Messungen"].isSelected)
+    }
+
+    @MainActor
     private func capture(_ name: String) {
         let attachment = XCTAttachment(screenshot: XCUIScreen.main.screenshot())
         attachment.name = name
