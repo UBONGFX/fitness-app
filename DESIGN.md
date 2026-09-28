@@ -97,7 +97,7 @@ The interface follows real stored records and names empty states plainly. The fl
 
 Main reading screens use one scroll column with regular side inset and full-width content inside it. Overview, Training, and Body cap their reading columns at 640 points on wide displays. `GlassCard` and `SolidCard` are historical code names for open sections: each spans the column, adds vertical breathing room, and draws a one-point rule at its top. Content within a section usually follows the regular spacing step; small comparisons use the tight step.
 
-The overview starts with a dated heading and native period picker, then presents goal, exercise, and training-volume evidence in ruled sections. Larger Dynamic Type can stack metric comparisons vertically. Training, live sets, history, Body, and data tools use the same open-section grammar where they present records. Native `List` and `Form` screens keep grouped rows for editing and settings. Scrolling screens reserve space for the native bottom timer accessory when shown.
+The overview starts with a dated heading and native period picker, then presents goal, exercise, and training-volume evidence in ruled sections. Larger Dynamic Type can stack metric comparisons vertically. Training puts this week's volume before the workout library so progress is visible immediately. Training, live sets, history, Body, and data tools use the same open-section grammar where they present records. Native `List` and `Form` screens keep grouped rows for editing and settings. The bottom navigation reserves space for the rest timer when shown.
 
 ## Elevation & Depth
 

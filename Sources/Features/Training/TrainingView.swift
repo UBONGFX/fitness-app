@@ -104,8 +104,8 @@ struct TrainingView: View {
         ScrollView {
             VStack(alignment: .leading, spacing: Theme.Spacing.section) {
                 FieldGuidePageTitle(title: "Training")
-                workoutSection
                 volumeSection
+                workoutSection
                 if !loggedExercises.isEmpty { exerciseHistorySection }
                 HistoryCard(sessions: sessions)
             }
