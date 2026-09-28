@@ -12,7 +12,7 @@ struct TrainingView: View {
     @Query(sort: \WorkoutSession.startedAt, order: .reverse)
     private var sessions: [WorkoutSession]
 
-    @State private var showingActions = false
+    @Binding var showingActions: Bool
     @State private var showingPicker = false
     @State private var showingCreator = false
     @State private var selectedTemplate: PlanDay?
@@ -117,26 +117,6 @@ struct TrainingView: View {
         }
         .scrollEdgeEffectStyle(.soft, for: .top)
         .clearsBottomAccessory()
-        .safeAreaInset(edge: .bottom, spacing: 0) {
-            HStack {
-                Spacer()
-                Button {
-                    showingActions = true
-                } label: {
-                    Image(systemName: "plus")
-                        .font(.title2.weight(.medium))
-                        .frame(width: 62, height: 62)
-                }
-                .buttonStyle(.glassProminent)
-                .accessibilityLabel("Workout starten oder erstellen")
-                .accessibilityIdentifier("workoutPlus")
-                Spacer()
-            }
-            .padding(.horizontal, Theme.Spacing.loose)
-            .padding(.top, Theme.Spacing.tight)
-            .padding(.bottom, Theme.Spacing.tight)
-            .background(AppBackground())
-        }
     }
 
     private var volumeSection: some View {

@@ -17,6 +17,9 @@ enum AppTab: String, CaseIterable {
 struct RootView: View {
     var isUsingFallbackStore = false
 
+    @Environment(\.colorScheme) private var colorScheme
+    @Environment(\.dynamicTypeSize) private var dynamicTypeSize
+
     @Query(filter: #Predicate<WorkoutSession> { $0.endedAt == nil })
     private var activeSessions: [WorkoutSession]
 
@@ -30,17 +33,14 @@ struct RootView: View {
     )
     @State private var saveReporter = SaveReporter()
     @State private var appearance = UserProfile.appearance
+    @State private var showingWorkoutActions = false
 
-    /// The accessory is only attached when it has something to show. Returning an
-    /// empty view from `tabViewBottomAccessory` is not enough on iOS 27 — the
-    /// container still renders as an empty capsule covering the content below.
     private var showAccessory: Bool {
-        // A running countdown follows you everywhere — that is the point of it
-        // living above the tab bar. The preset buttons do not: they are a
-        // training control, and on the overview or the body screen they were
-        // just a row of numbers with nothing to start. An unfinished session
-        // made them permanent furniture.
         restTimer.isRunning || (!activeSessions.isEmpty && selection == .training)
+    }
+
+    private var showWorkoutPlus: Bool {
+        selection == .training && activeSessions.isEmpty
     }
 
     var body: some View {
@@ -49,23 +49,22 @@ struct RootView: View {
                 // The overview links into the other tabs, so it needs to move the
                 // selection rather than push a second copy of those screens.
                 HomeView(selectedTab: $selection, appearance: $appearance)
+                    .toolbar(.hidden, for: .tabBar)
             }
             Tab("Training", systemImage: "figure.strengthtraining.traditional", value: AppTab.training) {
-                TrainingView()
+                TrainingView(showingActions: $showingWorkoutActions)
+                    .toolbar(.hidden, for: .tabBar)
             }
             Tab("Körper", systemImage: "ruler", value: AppTab.body) {
                 BodyView(isUsingFallbackStore: isUsingFallbackStore)
+                    .toolbar(.hidden, for: .tabBar)
             }
         }
         // On the whole tab view, not on a screen: a sheet presented from here
         // would otherwise keep the system scheme while everything behind it
         // changed.
         .preferredColorScheme(appearance.colorScheme)
-        .tabBarMinimizeBehavior(.onScrollDown)
-        .restAccessory(showAccessory, hasActiveSession: !activeSessions.isEmpty)
-        // The accessory floats over the content instead of taking part in the
-        // layout, so every scrolling screen has to reserve the room itself.
-        .environment(\.bottomAccessoryHeight, showAccessory ? 60 : 0)
+        .safeAreaInset(edge: .bottom, spacing: 0) { bottomNavigation }
         .environment(restTimer)
         .environment(saveReporter)
         // A failed write used to vanish silently; now it surfaces here.
@@ -84,19 +83,75 @@ struct RootView: View {
         // you notice it without looking at the screen.
         .sensoryFeedback(.success, trigger: restTimer.completions)
     }
-}
 
-private extension View {
-    /// Attaches the pause timer accessory, or nothing at all.
-    @ViewBuilder
-    func restAccessory(_ isShown: Bool, hasActiveSession: Bool) -> some View {
-        if isShown {
-            tabViewBottomAccessory {
-                RestTimerAccessory(hasActiveSession: hasActiveSession)
+    private var bottomNavigation: some View {
+        GlassEffectContainer(spacing: Theme.Spacing.tight) {
+            VStack(spacing: Theme.Spacing.tight) {
+                if showAccessory {
+                    RestTimerAccessory(hasActiveSession: !activeSessions.isEmpty)
+                        .padding(.vertical, Theme.Spacing.tight)
+                        .glassEffect(in: .capsule)
+                }
+
+                HStack(spacing: Theme.Spacing.tight) {
+                    HStack(spacing: 0) {
+                        tabButton(.home, title: "Übersicht", symbol: "square.grid.2x2")
+                        tabButton(.training, title: "Training", symbol: "figure.strengthtraining.traditional")
+                        tabButton(.body, title: "Körper", symbol: "ruler")
+                    }
+                    .padding(4)
+                    .frame(maxWidth: showWorkoutPlus ? 300 : 340)
+                    .glassEffect(in: .capsule)
+
+                    if showWorkoutPlus {
+                        Button {
+                            showingWorkoutActions = true
+                        } label: {
+                            Image(systemName: "plus")
+                                .font(.title3.weight(.semibold))
+                                .frame(width: 56, height: 56)
+                        }
+                        .buttonStyle(.glass)
+                        .buttonBorderShape(.circle)
+                        .tint(.accentColor)
+                        .accessibilityLabel("Workout hinzufügen")
+                        .accessibilityIdentifier("workoutPlus")
+                    }
+                }
+                .frame(maxWidth: .infinity)
             }
-        } else {
-            self
         }
+        .padding(.horizontal, Theme.Spacing.regular)
+        .padding(.top, Theme.Spacing.tight)
+        .padding(.bottom, 4)
+    }
+
+    private func tabButton(_ tab: AppTab, title: String, symbol: String) -> some View {
+        Button {
+            selection = tab
+        } label: {
+            VStack(spacing: 3) {
+                Image(systemName: symbol)
+                    .font(.system(size: 19, weight: .medium))
+                if !dynamicTypeSize.isAccessibilitySize {
+                    Text(title)
+                        .font(.caption2.weight(.medium))
+                        .lineLimit(1)
+                }
+            }
+            .foregroundStyle(selection == tab ? Color.accentColor : Color.primary)
+            .frame(maxWidth: .infinity)
+            .frame(height: 48)
+            .background {
+                if selection == tab {
+                    Capsule().fill(Theme.Palette.raised(colorScheme).opacity(0.75))
+                }
+            }
+            .contentShape(Capsule())
+        }
+        .buttonStyle(.plain)
+        .accessibilityLabel(title)
+        .accessibilityAddTraits(selection == tab ? .isSelected : [])
     }
 }
 
