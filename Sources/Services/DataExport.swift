@@ -192,7 +192,9 @@ nonisolated enum DataExport {
             id: goal.id,
             metric: goal.metricRaw,
             lowerBound: goal.lowerBound,
-            upperBound: goal.upperBound
+            upperBound: goal.upperBound,
+            priority: goal.priorityRaw,
+            hasTarget: goal.hasTarget
         )
     }
 

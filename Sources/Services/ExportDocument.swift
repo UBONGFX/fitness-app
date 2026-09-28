@@ -124,4 +124,8 @@ nonisolated struct ExportedGoal: Codable, Equatable, Sendable {
     var metric: String
     var lowerBound: Double
     var upperBound: Double
+    /// Missing in older exports; those goals import as secondary.
+    var priority: String?
+    /// Missing in older exports; those records always had numeric targets.
+    var hasTarget: Bool?
 }

@@ -18,8 +18,13 @@ struct GoalDraftTests {
         #expect(target?.upper == 82)
     }
 
-    @Test func enabledGoalNeedsAPositiveValue() {
+    @Test func enabledGoalMayObserveWithoutATarget() {
         #expect(GoalDraft(isEnabled: true).target == nil)
-        #expect(GoalDraft(isEnabled: true, lower: 0).target == nil)
+        #expect(!GoalDraft(isEnabled: true).hasInvalidValue)
+    }
+
+    @Test func enteredTargetMustBePositive() {
+        #expect(GoalDraft(isEnabled: true, lower: 0).hasInvalidValue)
+        #expect(GoalDraft(isEnabled: true, upper: -1).hasInvalidValue)
     }
 }

@@ -4,7 +4,27 @@ final class GoalsUITests: XCTestCase {
     override func setUp() { continueAfterFailure = false }
 
     @MainActor
-    func testGoalsCanBeSetAndRemovedIndependently() {
+    func testCreatesPrimaryObservation() {
+        let app = XCUIApplication()
+        app.launchArguments += ["-startTab", "body", "-uiTesting"]
+        app.launch()
+
+        XCTAssertTrue(app.buttons["openGoals"].waitForExistence(timeout: 10))
+        app.buttons["openGoals"].tap()
+        app.buttons["addGoal"].tap()
+        app.buttons["FFMI"].tap()
+        XCTAssertTrue(app.buttons["editGoal-ffmi"].waitForExistence(timeout: 5))
+        XCTAssertFalse(app.staticTexts["Körperfett"].exists)
+        capture("Goal editor with primary FFMI observation")
+        app.buttons["saveGoals"].tap()
+
+        XCTAssertTrue(app.buttons["editGoals"].waitForExistence(timeout: 5))
+        XCTAssertTrue(app.staticTexts["FFMI"].exists)
+        capture("Goal overview without measurements")
+    }
+
+    @MainActor
+    func testGoalsCanBeObservedPrioritizedAndRemovedIndependently() {
         let app = XCUIApplication()
         app.launchArguments += ["-startTab", "body", "-uiTesting"]
         app.launch()
@@ -13,35 +33,43 @@ final class GoalsUITests: XCTestCase {
         XCTAssertTrue(openGoals.waitForExistence(timeout: 10))
         openGoals.tap()
 
-        let weight = app.switches["goal-weight-enabled"]
-        let bodyFat = app.switches["goal-bodyFat-enabled"]
-        XCTAssertTrue(weight.waitForExistence(timeout: 5))
-        weight.coordinate(withNormalizedOffset: CGVector(dx: 0.88, dy: 0.5)).tap()
+        app.buttons["addGoal"].tap()
+        app.buttons["FFMI"].tap()
+        XCTAssertTrue(app.buttons["editGoal-ffmi"].waitForExistence(timeout: 5))
+        XCTAssertFalse(app.staticTexts["Körperfett"].exists)
+        app.buttons["saveGoals"].tap()
+
+        let editGoals = app.buttons["editGoals"]
+        XCTAssertTrue(editGoals.waitForExistence(timeout: 5))
+        editGoals.tap()
+        XCTAssertTrue(app.buttons["editGoal-ffmi"].waitForExistence(timeout: 5))
+
+        app.buttons["addGoal"].tap()
+        app.buttons["Gewicht"].tap()
         let weightValue = app.textFields["goal-weight-lower"]
         XCTAssertTrue(weightValue.waitForExistence(timeout: 5))
         weightValue.tap()
         weightValue.typeText("80")
-
-        bodyFat.coordinate(withNormalizedOffset: CGVector(dx: 0.88, dy: 0.5)).tap()
-        let bodyFatValue = app.textFields["goal-bodyFat-lower"]
-        XCTAssertTrue(bodyFatValue.waitForExistence(timeout: 5))
-        bodyFatValue.tap()
-        bodyFatValue.typeText("15")
         app.buttons["saveGoals"].tap()
 
-        XCTAssertTrue(openGoals.waitForExistence(timeout: 5))
-        openGoals.tap()
-        XCTAssertTrue(app.textFields["goal-weight-lower"].waitForExistence(timeout: 5))
-        XCTAssertTrue(app.textFields["goal-bodyFat-lower"].exists)
+        editGoals.tap()
+        XCTAssertTrue(app.buttons["editGoal-ffmi"].exists)
+        app.buttons["editGoal-weight"].tap()
         XCTAssertEqual(app.textFields["goal-weight-lower"].value as? String, "80")
-        XCTAssertEqual(app.textFields["goal-bodyFat-lower"].value as? String, "15")
-
-        app.switches["goal-weight-enabled"]
-            .coordinate(withNormalizedOffset: CGVector(dx: 0.88, dy: 0.5)).tap()
+        app.buttons["removeGoal-weight"].tap()
         app.buttons["saveGoals"].tap()
-        openGoals.tap()
-        XCTAssertFalse(app.textFields["goal-weight-lower"].exists)
-        XCTAssertTrue(app.textFields["goal-bodyFat-lower"].exists)
-        XCTAssertEqual(app.textFields["goal-bodyFat-lower"].value as? String, "15")
+
+        editGoals.tap()
+        XCTAssertTrue(app.buttons["editGoal-ffmi"].exists)
+        XCTAssertFalse(app.buttons["editGoal-weight"].exists)
+        XCTAssertFalse(app.staticTexts["Körperfett"].exists)
+    }
+
+    @MainActor
+    private func capture(_ name: String) {
+        let attachment = XCTAttachment(screenshot: XCUIScreen.main.screenshot())
+        attachment.name = name
+        attachment.lifetime = .keepAlways
+        add(attachment)
     }
 }

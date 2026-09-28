@@ -5,6 +5,7 @@ import Foundation
 nonisolated struct GoalTrend: Identifiable, Equatable, Sendable {
     let metric: BodyMetric
     let targetText: String
+    let hasTarget: Bool
     /// Most recent reading, `nil` when the metric has never been measured.
     let current: Double?
     /// Progress from the very first reading to the goal corridor.
@@ -66,8 +67,9 @@ nonisolated enum GoalTrends {
         let recorded = measurements.filter { $0.date <= now }
         return goals
             .sorted { lhs, rhs in
-                // Follow the metric order used everywhere else rather than the
-                // order goals happened to be created in.
+                if lhs.priority != rhs.priority {
+                    return lhs.priority.sortOrder < rhs.priority.sortOrder
+                }
                 let all = BodyMetric.allCases
                 let left = all.firstIndex(of: lhs.metric) ?? all.count
                 let right = all.firstIndex(of: rhs.metric) ?? all.count
@@ -88,6 +90,7 @@ nonisolated enum GoalTrends {
         let baseline = baseline(in: points, periodStart: periodStart, current: current)
 
         let evaluation = current.flatMap { latest -> GoalEvaluation? in
+            guard goal.hasTarget else { return nil }
             guard let first = points.first else { return nil }
             return GoalProgress.evaluate(
                 start: first.value,
@@ -98,7 +101,7 @@ nonisolated enum GoalTrends {
         }
 
         let closed: Double? = {
-            guard let current, let baseline else { return nil }
+            guard goal.hasTarget, let current, let baseline else { return nil }
             return distanceToCorridor(baseline.value, lower: goal.lowerBound, upper: goal.upperBound)
                 - distanceToCorridor(current.value, lower: goal.lowerBound, upper: goal.upperBound)
         }()
@@ -106,6 +109,7 @@ nonisolated enum GoalTrends {
         return GoalTrend(
             metric: goal.metric,
             targetText: goal.formattedTarget,
+            hasTarget: goal.hasTarget,
             current: current?.value,
             evaluation: evaluation,
             baseline: baseline?.value,

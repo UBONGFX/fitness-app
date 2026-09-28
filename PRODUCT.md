@@ -30,6 +30,8 @@ The interface is currently German-only. The app is used to prepare or start a wo
 - HealthKit access is optional and permission-based. CloudKit sync is disabled; do not imply that data syncs between devices.
 - Existing on-device records must remain usable when workout screens or models change.
 - The main product priority is flexible workouts, exercise progression, and clear insight into progress toward personal goals.
+- Body goals are user-selected: any metric may be omitted, multiple goals may be primary, and a selected goal can be saved without a numeric target.
+- Respect each user's goal priority in progress views; FFMI can be primary while body fat stays absent if unselected.
 
 ## Evidence on Hand
 

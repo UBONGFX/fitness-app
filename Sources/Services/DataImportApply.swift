@@ -116,6 +116,8 @@ enum DataImportApply {
             target.metricRaw = entry.metric
             target.lowerBound = entry.lowerBound
             target.upperBound = entry.upperBound
+            target.priority = GoalPriority(rawValue: entry.priority ?? "") ?? .secondary
+            target.hasTarget = entry.hasTarget ?? true
         }
     }
 

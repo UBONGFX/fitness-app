@@ -20,7 +20,8 @@ struct HomeView: View {
         GoalTrends.trends(goals: goals, measurements: measurements, period: period)
     }
     private var featuredTrend: GoalTrend? {
-        trends.first { $0.current != nil } ?? trends.first
+        // A primary goal stays in focus even before its first measurement.
+        trends.first
     }
     private var featuredGoal: MetricGoal? {
         guard let featuredTrend else { return nil }
@@ -155,7 +156,9 @@ struct HomeView: View {
                     VStack(alignment: .leading, spacing: 2) {
                         Text(featuredTrend?.metric.displayName ?? "Meine Ziele")
                             .font(.system(.title2, design: .serif).weight(.semibold))
-                        Text(periodRangeText)
+                        Text(featuredGoal?.priority == .primary
+                             ? "Primäres Ziel · \(periodRangeText)"
+                             : periodRangeText)
                             .font(.caption)
                             .foregroundStyle(.secondary)
                     }
@@ -202,13 +205,13 @@ struct HomeView: View {
         if dynamicTypeSize.isAccessibilitySize {
             VStack(spacing: Theme.Spacing.tight) {
                 goalMetricRow("Aktuell", trend.currentText ?? "—")
-                goalMetricRow("Zielbereich", trend.targetText)
+                goalMetricRow(trend.hasTarget ? "Zielbereich" : "Ziel", trend.targetText)
                 goalMetricRow("Veränderung", change, isAccent: changeIsAccent)
             }
         } else {
             HStack(alignment: .top, spacing: Theme.Spacing.tight) {
                 metric("Aktuell", trend.currentText ?? "—")
-                metric("Zielbereich", trend.targetText)
+                metric(trend.hasTarget ? "Zielbereich" : "Ziel", trend.targetText)
                 metric("Veränderung", change, isAccent: changeIsAccent)
             }
         }
@@ -240,13 +243,15 @@ struct HomeView: View {
             } else {
                 VStack(alignment: .leading, spacing: 4) {
                     Chart {
-                        RuleMark(y: .value("Ziel unten", min(goal.lowerBound, goal.upperBound)))
-                            .foregroundStyle(.secondary.opacity(0.5))
-                            .lineStyle(StrokeStyle(lineWidth: 1, dash: [4, 4]))
-                        if !goal.isSingleValue {
-                            RuleMark(y: .value("Ziel oben", max(goal.lowerBound, goal.upperBound)))
+                        if goal.hasTarget {
+                            RuleMark(y: .value("Ziel unten", min(goal.lowerBound, goal.upperBound)))
                                 .foregroundStyle(.secondary.opacity(0.5))
                                 .lineStyle(StrokeStyle(lineWidth: 1, dash: [4, 4]))
+                            if !goal.isSingleValue {
+                                RuleMark(y: .value("Ziel oben", max(goal.lowerBound, goal.upperBound)))
+                                    .foregroundStyle(.secondary.opacity(0.5))
+                                    .lineStyle(StrokeStyle(lineWidth: 1, dash: [4, 4]))
+                            }
                         }
                         ForEach(points) { point in
                             LineMark(x: .value("Datum", point.date), y: .value("Wert", point.value))
@@ -258,7 +263,7 @@ struct HomeView: View {
                     }
                     .chartYScale(domain: MeasurementSeries.range(
                         for: points,
-                        covering: [goal.lowerBound, goal.upperBound]
+                        covering: goal.hasTarget ? [goal.lowerBound, goal.upperBound] : []
                     ) ?? 0...1)
                     .chartXScale(domain: goalXDomain(points))
                     .chartXAxis {
@@ -430,7 +435,7 @@ struct HomeView: View {
                             Spacer(minLength: Theme.Spacing.tight)
                             Text(trend.currentText ?? "—")
                                 .font(.subheadline.weight(.semibold).monospacedDigit())
-                            Text("→ \(trend.targetText)")
+                            Text(trend.hasTarget ? "→ \(trend.targetText)" : "Beobachten")
                                 .font(.caption)
                                 .foregroundStyle(.secondary)
                         }

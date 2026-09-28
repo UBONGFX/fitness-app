@@ -29,7 +29,7 @@ struct BodyView: View {
                     .padding(.horizontal, Theme.Spacing.regular)
                     .padding(.top, Theme.Spacing.tight)
                 Group {
-                    if measurements.isEmpty {
+                    if measurements.isEmpty && goals.isEmpty {
                         emptyState
                     } else {
                         content
@@ -52,6 +52,10 @@ struct BodyView: View {
                 }
             }
             .background(AppBackground())
+            .onAppear(perform: focusPreferredGoal)
+            .onChange(of: goals.map { "\($0.metricRaw):\($0.priorityRaw)" }) { _, _ in
+                focusPreferredGoal()
+            }
             .navigationTitle("")
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {
@@ -119,42 +123,58 @@ struct BodyView: View {
         ScrollView {
             GlassEffectContainer(spacing: Theme.Spacing.regular) {
                 VStack(spacing: Theme.Spacing.regular) {
-                    MetricChartCard(
-                        measurements: measurements,
-                        goal: goalForChart,
-                        metric: $chartMetric
-                    )
-
                     GoalsCard(measurements: measurements, goals: goals) {
                         showingGoals = true
                     }
 
-                    ProportionsCard(measurements: measurements)
-
-                    // A way into the log from here, so the segmented control is
-                    // not the only route anyone ever finds.
-                    Button {
-                        section = .measurements
-                    } label: {
+                    if measurements.isEmpty {
                         GlassCard {
-                            HStack {
-                                VStack(alignment: .leading, spacing: 2) {
-                                    Text("Alle Messungen")
-                                        .font(.subheadline.weight(.medium))
-                                    Text(measurementCountText)
-                                        .font(.caption2)
-                                        .foregroundStyle(.secondary)
+                            VStack(alignment: .leading, spacing: Theme.Spacing.regular) {
+                                SectionHeader(
+                                    title: "Erste Messung",
+                                    subtitle: "Erfasse einen Wert, um seine Entwicklung zu sehen."
+                                )
+                                Button("Messung erfassen", systemImage: "plus") {
+                                    editing = nil
+                                    showingForm = true
                                 }
-                                Spacer(minLength: Theme.Spacing.tight)
-                                Image(systemName: "chevron.right")
-                                    .font(.caption2)
-                                    .foregroundStyle(.tertiary)
+                                .buttonStyle(.borderedProminent)
                             }
-                            .contentShape(Rectangle())
                         }
+                    } else {
+                        MetricChartCard(
+                            measurements: measurements,
+                            goal: goalForChart,
+                            metric: $chartMetric
+                        )
+
+                        ProportionsCard(measurements: measurements)
+
+                        // A way into the log from here, so the segmented control is
+                        // not the only route anyone ever finds.
+                        Button {
+                            section = .measurements
+                        } label: {
+                            GlassCard {
+                                HStack {
+                                    VStack(alignment: .leading, spacing: 2) {
+                                        Text("Alle Messungen")
+                                            .font(.subheadline.weight(.medium))
+                                        Text(measurementCountText)
+                                            .font(.caption2)
+                                            .foregroundStyle(.secondary)
+                                    }
+                                    Spacer(minLength: Theme.Spacing.tight)
+                                    Image(systemName: "chevron.right")
+                                        .font(.caption2)
+                                        .foregroundStyle(.tertiary)
+                                }
+                                .contentShape(Rectangle())
+                            }
+                        }
+                        .buttonStyle(.plain)
+                        .accessibilityIdentifier("openMeasurements")
                     }
-                    .buttonStyle(.plain)
-                    .accessibilityIdentifier("openMeasurements")
                 }
                 .padding(Theme.Spacing.regular)
             }
@@ -174,6 +194,9 @@ struct BodyView: View {
         ScrollView {
             GlassEffectContainer(spacing: Theme.Spacing.regular) {
                 VStack(spacing: Theme.Spacing.regular) {
+                    if measurements.isEmpty {
+                        emptyState
+                    }
                     ForEach(measurements) { measurement in
                         Button {
                             editing = measurement
@@ -209,6 +232,18 @@ struct BodyView: View {
         }
         .scrollEdgeEffectStyle(.soft, for: .top)
         .clearsBottomAccessory()
+    }
+
+    private func focusPreferredGoal() {
+        let preferred = goals.min { lhs, rhs in
+            if lhs.priority != rhs.priority {
+                return lhs.priority.sortOrder < rhs.priority.sortOrder
+            }
+            let all = BodyMetric.allCases
+            return (all.firstIndex(of: lhs.metric) ?? all.count)
+                < (all.firstIndex(of: rhs.metric) ?? all.count)
+        }
+        if let preferred { chartMetric = preferred.metric }
     }
 
     private func delete(_ measurement: BodyMeasurement) {

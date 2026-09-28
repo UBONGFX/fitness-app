@@ -55,7 +55,7 @@ struct MetricChartCard: View {
     }
 
     private var goalBounds: [Double] {
-        guard let goal else { return [] }
+        guard let goal, goal.hasTarget else { return [] }
         return [goal.lowerBound, goal.upperBound]
     }
 
@@ -107,7 +107,7 @@ struct MetricChartCard: View {
 
     private var chart: some View {
         Chart {
-            if let goal {
+            if let goal, goal.hasTarget {
                 RectangleMark(
                     yStart: .value("Ziel von", min(goal.lowerBound, goal.upperBound)),
                     yEnd: .value("Ziel bis", max(goal.lowerBound, goal.upperBound))
