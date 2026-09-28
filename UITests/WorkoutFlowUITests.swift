@@ -47,7 +47,7 @@ final class WorkoutFlowUITests: XCTestCase {
         app.buttons["addSet-Bankdrücken"].tap()
         app.buttons["saveSet"].tap()
         app.buttons["finishSession"].tap()
-        app.buttons["Training beenden"].tap()
+        app.buttons["Training abschließen"].tap()
 
         let index = app.buttons["openExerciseProgress"]
         XCTAssertTrue(index.waitForExistence(timeout: 5))

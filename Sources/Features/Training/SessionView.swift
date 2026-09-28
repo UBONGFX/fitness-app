@@ -49,8 +49,12 @@ struct SessionView: View {
         .toolbar {
             if session.isActive {
                 ToolbarItem(placement: .primaryAction) {
-                    Button("Beenden") { showingFinishConfirmation = true }
-                        .accessibilityIdentifier("finishSession")
+                    Button("Abschließen") {
+                        showingFinishConfirmation = true
+                    }
+                    .font(.subheadline.weight(.semibold))
+                    .tint(.accentColor)
+                    .accessibilityIdentifier("finishSession")
                 }
             }
         }
@@ -67,15 +71,19 @@ struct SessionView: View {
             SessionExercisePickerView(session: session)
         }
         .confirmationDialog(
-            "Training beenden?",
+            "Training abschließen?",
             isPresented: $showingFinishConfirmation,
             titleVisibility: .visible
         ) {
-            Button("Training beenden", role: .destructive) { finish() }
+            Button("Training abschließen") { finish() }
             Button("Weiter trainieren", role: .cancel) {}
         } message: {
-            Text("\(session.completedSets) Sätze in \(session.durationText).")
+            Text("\(completedSetText) · \(session.durationText). Danach findest du die Einheit im Verlauf.")
         }
+    }
+
+    private var completedSetText: String {
+        session.completedSets == 1 ? "1 Satz" : "\(session.completedSets) Sätze"
     }
 
     private var summaryCard: some View {
