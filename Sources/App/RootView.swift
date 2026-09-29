@@ -25,6 +25,7 @@ struct RootView: View {
 
     @Query(filter: #Predicate<WorkoutSession> { $0.endedAt == nil })
     private var activeSessions: [WorkoutSession]
+    @Query private var allDays: [PlanDay]
 
     @State private var selection = AppTab.launchDefault
     // A real notification scheduler asks iOS for permission on the first pause,
@@ -37,6 +38,7 @@ struct RootView: View {
     @State private var saveReporter = SaveReporter()
     @State private var appearance = UserProfile.appearance
     @State private var showingWorkoutActions = false
+    @State private var requestedWorkoutAction: WorkoutAction?
     @State private var showingFinishConfirmation = false
     @AccessibilityFocusState private var finishTitleFocused: Bool
 
@@ -45,7 +47,7 @@ struct RootView: View {
     }
 
     private var showWorkoutPlus: Bool {
-        selection == .training && activeSessions.isEmpty
+        activeSessions.isEmpty
     }
 
     var body: some View {
@@ -59,7 +61,7 @@ struct RootView: View {
                 }
                 Tab("Training", systemImage: "figure.strengthtraining.traditional", value: AppTab.training) {
                     TrainingView(
-                        showingActions: $showingWorkoutActions,
+                        requestedAction: $requestedWorkoutAction,
                         showingFinishConfirmation: $showingFinishConfirmation
                     )
                         .toolbar(.hidden, for: .tabBar)
@@ -88,6 +90,13 @@ struct RootView: View {
         }
         .onChange(of: showingFinishConfirmation) { _, isShown in
             finishTitleFocused = isShown
+        }
+        .sheet(isPresented: $showingWorkoutActions) {
+            WorkoutActionsSheet(hasTemplates: !WorkoutLibrary.templates(in: allDays).isEmpty) { action in
+                selectWorkoutAction(action)
+            }
+            .presentationDetents(dynamicTypeSize.isAccessibilitySize ? [.large] : [.height(310)])
+            .presentationDragIndicator(.visible)
         }
         .environment(restTimer)
         .environment(saveReporter)
@@ -148,6 +157,17 @@ struct RootView: View {
         .padding(.horizontal, Theme.Spacing.regular)
         .padding(.top, Theme.Spacing.tight)
         .padding(.bottom, 4)
+    }
+
+    private func selectWorkoutAction(_ action: WorkoutAction) {
+        showingWorkoutActions = false
+        // Let the sheet finish its native dismissal before the next sheet or
+        // training session is requested from the Training tab.
+        Task { @MainActor in
+            try? await Task.sleep(for: .milliseconds(300))
+            selection = .training
+            requestedWorkoutAction = action
+        }
     }
 
     private func finishModalOverlay(for session: WorkoutSession) -> some View {

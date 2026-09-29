@@ -4,9 +4,9 @@ final class WorkoutFlowUITests: XCTestCase {
     override func setUp() { continueAfterFailure = false }
 
     @MainActor
-    private func launch() -> XCUIApplication {
+    private func launch(tab: String = "training") -> XCUIApplication {
         let app = XCUIApplication()
-        app.launchArguments += ["-startTab", "training", "-uiTesting"]
+        app.launchArguments += ["-startTab", tab, "-uiTesting"]
         app.launch()
         return app
     }
@@ -34,6 +34,14 @@ final class WorkoutFlowUITests: XCTestCase {
         XCTAssertTrue(app.buttons["Neues Workout erstellen"].isHittable)
         XCTAssertTrue(app.buttons["Freies Training starten"].isHittable)
         capture("Workout actions sheet")
+    }
+
+    @MainActor
+    func testWorkoutPlusIsAvailableOutsideTraining() {
+        let app = launch(tab: "body")
+        XCTAssertTrue(app.buttons["workoutPlus"].waitForExistence(timeout: 5))
+        app.buttons["workoutPlus"].tap()
+        XCTAssertTrue(app.staticTexts["Training starten"].waitForExistence(timeout: 5))
     }
 
     @MainActor

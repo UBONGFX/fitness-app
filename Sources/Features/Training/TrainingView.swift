@@ -12,7 +12,7 @@ struct TrainingView: View {
     @Query(sort: \WorkoutSession.startedAt, order: .reverse)
     private var sessions: [WorkoutSession]
 
-    @Binding var showingActions: Bool
+    @Binding var requestedAction: WorkoutAction?
     @Binding var showingFinishConfirmation: Bool
     @State private var showingPicker = false
     @State private var showingCreator = false
@@ -77,13 +77,6 @@ struct TrainingView: View {
                     }
                 }
             }
-            .sheet(isPresented: $showingActions) {
-                WorkoutActionsSheet(hasTemplates: !templates.isEmpty) { action in
-                    choose(action)
-                }
-                .presentationDetents(dynamicTypeSize.isAccessibilitySize ? [.large] : [.height(310)])
-                .presentationDragIndicator(.visible)
-            }
             .sheet(isPresented: $showingPicker) { savedWorkoutPicker }
             .sheet(isPresented: $showingCreator) {
                 CreateWorkoutView { created in editingTemplate = created }
@@ -98,6 +91,15 @@ struct TrainingView: View {
             }
             .navigationDestination(item: $editingTemplate) { template in
                 PlanDayEditorView(day: template)
+            }
+            .onChange(of: requestedAction) { _, action in
+                guard let action else { return }
+                requestedAction = nil
+                switch action {
+                case .saved: showingPicker = true
+                case .create: showingCreator = true
+                case .free: startFreeWorkout()
+                }
             }
         }
     }
@@ -347,20 +349,6 @@ struct TrainingView: View {
         return "Zuletzt: \(date.formatted(.dateTime.day().month(.abbreviated).year()))"
     }
 
-    private func choose(_ action: WorkoutAction) {
-        showingActions = false
-        // A second sheet cannot reliably be presented during the first sheet's
-        // dismissal animation on device. Start the selected flow after it ends.
-        Task { @MainActor in
-            try? await Task.sleep(for: .milliseconds(300))
-            switch action {
-            case .saved: showingPicker = true
-            case .create: showingCreator = true
-            case .free: startFreeWorkout()
-            }
-        }
-    }
-
     private func start(_ template: PlanDay) {
         context.insert(WorkoutLibrary.makeSession(from: template))
         restTimer.prepareNotifications()
@@ -461,11 +449,11 @@ private struct WeeklyLoad: Identifiable {
     var id: Date { date }
 }
 
-private enum WorkoutAction {
+enum WorkoutAction: Equatable {
     case saved, create, free
 }
 
-private struct WorkoutActionsSheet: View {
+struct WorkoutActionsSheet: View {
     @Environment(\.colorScheme) private var scheme
     let hasTemplates: Bool
     let select: (WorkoutAction) -> Void
