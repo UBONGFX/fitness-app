@@ -81,7 +81,7 @@ struct TrainingView: View {
                 WorkoutActionsSheet(hasTemplates: !templates.isEmpty) { action in
                     choose(action)
                 }
-                .presentationDetents(dynamicTypeSize.isAccessibilitySize ? [.large] : [.height(300)])
+                .presentationDetents(dynamicTypeSize.isAccessibilitySize ? [.large] : [.height(310)])
                 .presentationDragIndicator(.visible)
             }
             .sheet(isPresented: $showingPicker) { savedWorkoutPicker }
@@ -501,7 +501,7 @@ private struct WorkoutActionsSheet: View {
             .background(Theme.Palette.surface(scheme), in: .rect(cornerRadius: Theme.Radius.card))
         }
         .padding(.horizontal, Theme.Spacing.regular)
-        .padding(.top, Theme.Spacing.tight)
+        .padding(.top, Theme.Spacing.regular)
         .padding(.bottom, Theme.Spacing.loose)
         .frame(maxWidth: .infinity, alignment: .leading)
         .frame(maxHeight: .infinity, alignment: .top)
