@@ -15,8 +15,9 @@ struct ChartDateAxisTests {
     }
 
     @Test func namesOneDayOnlyOnce() {
-        let calendar = Calendar(identifier: .gregorian)
-        let day = Date(timeIntervalSince1970: 1_700_000_000)
+        var calendar = Calendar(identifier: .gregorian)
+        calendar.timeZone = TimeZone(secondsFromGMT: 0)!
+        let day = calendar.date(from: DateComponents(year: 2026, month: 9, day: 29, hour: 12))!
         let laterThatDay = day.addingTimeInterval(60 * 60)
 
         #expect(ChartDateAxis.endpoints(for: [day, laterThatDay], calendar: calendar) == [day])
