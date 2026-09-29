@@ -74,28 +74,29 @@ struct AllSessionsView: View {
 
     var body: some View {
         ScrollView {
-            GlassEffectContainer(spacing: Theme.Spacing.regular) {
-                VStack(spacing: Theme.Spacing.regular) {
-                    GlassCard {
-                        HStack(spacing: Theme.Spacing.section) {
-                            stat("Einheiten", "\(finished.count)")
-                            stat("Sätze", "\(finished.reduce(0) { $0 + $1.completedSets })")
-                            stat("Last", "\(Int(SessionHistory.totalLoad(finished))) kg")
-                            Spacer()
-                        }
-                    }
-                    ForEach(finished) { session in
-                        NavigationLink {
-                            SessionDetailView(session: session)
-                        } label: {
-                            GlassCard { SessionRow(session: session) }
-                        }
-                        .buttonStyle(.plain)
-                        .accessibilityIdentifier("allSession-\(session.dayName)")
+            LazyVStack(spacing: 0) {
+                SolidCard {
+                    HStack(alignment: .firstTextBaseline) {
+                        stat("Einheiten", "\(finished.count)")
+                        Spacer()
+                        stat("Sätze", "\(finished.reduce(0) { $0 + $1.completedSets })")
+                        Spacer()
+                        stat("Last", "\(Int(SessionHistory.totalLoad(finished))) kg")
                     }
                 }
-                .padding(Theme.Spacing.regular)
+
+                ForEach(finished) { session in
+                    NavigationLink {
+                        SessionDetailView(session: session)
+                    } label: {
+                        SolidCard { SessionRow(session: session) }
+                    }
+                    .buttonStyle(.plain)
+                    .accessibilityIdentifier("allSession-\(session.dayName)")
+                }
             }
+            .padding(.horizontal, Theme.Spacing.regular)
+            .padding(.vertical, Theme.Spacing.regular)
         }
         .scrollEdgeEffectStyle(.soft, for: .top)
         .clearsBottomAccessory()

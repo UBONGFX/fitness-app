@@ -45,6 +45,26 @@ final class WorkoutFlowUITests: XCTestCase {
     }
 
     @MainActor
+    func testAllSessionsUsesTheTrainingRecordLayout() {
+        let app = launch()
+        app.buttons["workoutPlus"].tap()
+        app.buttons["Freies Training starten"].tap()
+        XCTAssertTrue(app.buttons["addSessionExercise"].waitForExistence(timeout: 10))
+        app.buttons["addSessionExercise"].tap()
+        app.buttons["pickSession-Bankdrücken"].tap()
+        app.buttons["addSet-Bankdrücken"].tap()
+        app.buttons["saveSet"].tap()
+        app.buttons["finishSession"].tap()
+        app.buttons["confirmFinishSession"].tap()
+
+        let allSessions = app.buttons["allSessions"]
+        XCTAssertTrue(allSessions.waitForExistence(timeout: 5))
+        allSessions.tap()
+        XCTAssertTrue(app.navigationBars["Alle Einheiten"].waitForExistence(timeout: 5))
+        capture("All sessions records")
+    }
+
+    @MainActor
     func testStartsAFreeSessionAndAddsAnExercise() {
         let app = launch()
         XCTAssertTrue(app.buttons["workoutPlus"].waitForExistence(timeout: 10))
