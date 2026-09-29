@@ -1,4 +1,5 @@
 import Foundation
+import SwiftData
 
 /// A weight / body-fat reading from Health, stripped of the HealthKit types so
 /// the merge rules can be tested without a health store.
@@ -132,12 +133,49 @@ nonisolated enum HealthImport {
     }
 
     static func derivedFFMI(weight: Double?, bodyFat: Double?, heightMeters: Double) -> Double? {
-        guard let weight, let bodyFat, heightMeters > 0 else { return nil }
+        guard let weight, let bodyFat,
+              weight > 0, (0...100).contains(bodyFat), heightMeters > 0 else { return nil }
         let value = BodyMeasurement.calculateFFMI(
             weight: weight,
             bodyFat: bodyFat,
             heightMeters: heightMeters
         )
         return (value * 10).rounded() / 10
+    }
+
+    /// Keeps an explicitly entered FFMI, but updates an automatically derived
+    /// value when its weight or body-fat inputs change.
+    static func resolvedFFMI(
+        entered: Double?, previous: BodyMeasurement?, weight: Double?,
+        bodyFat: Double?, heightMeters: Double
+    ) -> Double? {
+        let calculated = derivedFFMI(weight: weight, bodyFat: bodyFat, heightMeters: heightMeters)
+        guard let previous, let previousFFMI = previous.ffmi else {
+            return entered ?? calculated
+        }
+        let previousCalculation = derivedFFMI(
+            weight: previous.weight, bodyFat: previous.bodyFat, heightMeters: heightMeters
+        )
+        if entered == previousFFMI && previousFFMI == previousCalculation {
+            return calculated
+        }
+        return entered ?? calculated
+    }
+
+    /// Repairs older measurements that have both inputs but no stored FFMI.
+    /// Existing FFMI values may be manual, so they are never replaced.
+    @MainActor
+    static func fillMissingFFMI(in context: ModelContext, heightMeters: Double) {
+        guard let measurements = try? context.fetch(FetchDescriptor<BodyMeasurement>()) else { return }
+        var changed = false
+        for measurement in measurements where measurement.ffmi == nil {
+            if let value = derivedFFMI(
+                weight: measurement.weight, bodyFat: measurement.bodyFat, heightMeters: heightMeters
+            ) {
+                measurement.ffmi = value
+                changed = true
+            }
+        }
+        if changed { try? context.save() }
     }
 }

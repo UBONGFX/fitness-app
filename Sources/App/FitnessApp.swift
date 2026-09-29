@@ -45,6 +45,7 @@ struct FitnessApp: App {
             isUsingFallbackStore = false
             SeedData.seedIfNeeded(persistent.mainContext)
             WorkoutLibrary.importExistingPlansIfNeeded(persistent.mainContext)
+            HealthImport.fillMissingFFMI(in: persistent.mainContext, heightMeters: UserProfile.heightMeters)
         } else {
             // A corrupt store or a failed migration must not make the app
             // unlaunchable — start in memory and let the user see the warning.

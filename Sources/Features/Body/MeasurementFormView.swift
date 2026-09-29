@@ -14,10 +14,9 @@ struct MeasurementFormView: View {
     @State private var values: [BodyMetric: Double] = [:]
 
     private var suggestedFFMI: Double? {
-        guard let weight = values[.weight], let bodyFat = values[.bodyFat] else { return nil }
-        return BodyMeasurement.calculateFFMI(
-            weight: weight,
-            bodyFat: bodyFat,
+        HealthImport.derivedFFMI(
+            weight: values[.weight],
+            bodyFat: values[.bodyFat],
             heightMeters: UserProfile.heightMeters
         )
     }
@@ -44,15 +43,11 @@ struct MeasurementFormView: View {
                             )
                     }
                     if let suggestedFFMI, values[.ffmi] == nil {
-                        Button {
-                            values[.ffmi] = (suggestedFFMI * 10).rounded() / 10
-                        } label: {
-                            Label(
-                                "FFMI übernehmen: \(suggestedFFMI, format: .number.precision(.fractionLength(1)))",
-                                systemImage: "function"
-                            )
-                            .font(.footnote)
-                        }
+                        Label(
+                            "FFMI wird berechnet: \(suggestedFFMI, format: .number.precision(.fractionLength(1)))",
+                            systemImage: "function"
+                        )
+                        .font(.footnote)
                         .glassRow(.last)
                     }
                 }
@@ -105,10 +100,17 @@ struct MeasurementFormView: View {
 
     private func save() {
         let measurement = existing ?? BodyMeasurement()
+        let ffmi = HealthImport.resolvedFFMI(
+            entered: values[.ffmi],
+            previous: existing,
+            weight: values[.weight],
+            bodyFat: values[.bodyFat],
+            heightMeters: UserProfile.heightMeters
+        )
         measurement.date = date
         measurement.note = note
         for metric in BodyMetric.allCases {
-            measurement[metric] = values[metric]
+            measurement[metric] = metric == .ffmi ? ffmi : values[metric]
         }
         if existing == nil {
             context.insert(measurement)
