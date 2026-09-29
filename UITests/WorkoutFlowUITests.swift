@@ -26,6 +26,17 @@ final class WorkoutFlowUITests: XCTestCase {
     }
 
     @MainActor
+    func testWorkoutActionsSheetHasThreeClearStartingPoints() {
+        let app = launch()
+        app.buttons["workoutPlus"].tap()
+
+        XCTAssertTrue(app.staticTexts["Training starten"].waitForExistence(timeout: 5))
+        XCTAssertTrue(app.buttons["Neues Workout erstellen"].isHittable)
+        XCTAssertTrue(app.buttons["Freies Training starten"].isHittable)
+        capture("Workout actions sheet")
+    }
+
+    @MainActor
     func testStartsAFreeSessionAndAddsAnExercise() {
         let app = launch()
         XCTAssertTrue(app.buttons["workoutPlus"].waitForExistence(timeout: 10))
@@ -63,5 +74,13 @@ final class WorkoutFlowUITests: XCTestCase {
         XCTAssertTrue(exercise.waitForExistence(timeout: 5))
         exercise.tap()
         XCTAssertTrue(app.navigationBars["Bankdrücken"].waitForExistence(timeout: 5))
+    }
+
+    @MainActor
+    private func capture(_ name: String) {
+        let attachment = XCTAttachment(screenshot: XCUIScreen.main.screenshot())
+        attachment.name = name
+        attachment.lifetime = .keepAlways
+        add(attachment)
     }
 }

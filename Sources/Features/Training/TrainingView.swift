@@ -18,7 +18,6 @@ struct TrainingView: View {
     @State private var showingCreator = false
     @State private var selectedTemplate: PlanDay?
     @State private var editingTemplate: PlanDay?
-    @State private var pendingAction: WorkoutAction?
 
     private var templates: [PlanDay] { WorkoutLibrary.templates(in: allDays) }
     private var activeSession: WorkoutSession? { sessions.first(where: \.isActive) }
@@ -78,12 +77,11 @@ struct TrainingView: View {
                     }
                 }
             }
-            .sheet(isPresented: $showingActions, onDismiss: performPendingAction) {
+            .sheet(isPresented: $showingActions) {
                 WorkoutActionsSheet(hasTemplates: !templates.isEmpty) { action in
-                    pendingAction = action
-                    showingActions = false
+                    choose(action)
                 }
-                .presentationDetents(dynamicTypeSize.isAccessibilitySize ? [.large] : [.height(350)])
+                .presentationDetents(dynamicTypeSize.isAccessibilitySize ? [.large] : [.height(300)])
                 .presentationDragIndicator(.visible)
             }
             .sheet(isPresented: $showingPicker) { savedWorkoutPicker }
@@ -349,13 +347,17 @@ struct TrainingView: View {
         return "Zuletzt: \(date.formatted(.dateTime.day().month(.abbreviated).year()))"
     }
 
-    private func performPendingAction() {
-        guard let action = pendingAction else { return }
-        pendingAction = nil
-        switch action {
-        case .saved: showingPicker = true
-        case .create: showingCreator = true
-        case .free: startFreeWorkout()
+    private func choose(_ action: WorkoutAction) {
+        showingActions = false
+        // A second sheet cannot reliably be presented during the first sheet's
+        // dismissal animation on device. Start the selected flow after it ends.
+        Task { @MainActor in
+            try? await Task.sleep(for: .milliseconds(300))
+            switch action {
+            case .saved: showingPicker = true
+            case .create: showingCreator = true
+            case .free: startFreeWorkout()
+            }
         }
     }
 
@@ -470,22 +472,39 @@ private struct WorkoutActionsSheet: View {
 
     var body: some View {
         VStack(alignment: .leading, spacing: Theme.Spacing.regular) {
-            Text("Training")
-                .font(.system(.title2, design: .serif).weight(.semibold))
-                .padding(.top, Theme.Spacing.regular)
-            action("Gespeichertes Workout starten", subtitle: "Aus deinen Workouts wählen", icon: "dumbbell", enabled: hasTemplates) {
-                select(.saved)
+            VStack(alignment: .leading, spacing: 4) {
+                Text("Training starten")
+                    .font(.system(.title2, design: .serif).weight(.semibold))
+                Text("Wähle, wie du heute trainieren möchtest.")
+                    .font(.subheadline)
+                    .foregroundStyle(.secondary)
             }
-            action("Neues Workout erstellen", subtitle: "Übungen für später speichern", icon: "plus.square") {
-                select(.create)
+
+            VStack(spacing: 0) {
+                action(
+                    "Gespeichertes Workout starten",
+                    subtitle: hasTemplates ? "Aus deinen Workouts wählen" : "Noch kein Workout gespeichert",
+                    icon: "dumbbell",
+                    enabled: hasTemplates
+                ) {
+                    select(.saved)
+                }
+                Divider().overlay(Theme.Palette.rule(scheme))
+                action("Neues Workout erstellen", subtitle: "Übungen für später speichern", icon: "plus.square") {
+                    select(.create)
+                }
+                Divider().overlay(Theme.Palette.rule(scheme))
+                action("Freies Training starten", subtitle: "Ohne Vorlage loslegen", icon: "bolt.fill") {
+                    select(.free)
+                }
             }
-            action("Freies Training starten", subtitle: "Ohne Vorlage loslegen", icon: "bolt.fill") {
-                select(.free)
-            }
-            Spacer(minLength: 0)
+            .background(Theme.Palette.surface(scheme), in: .rect(cornerRadius: Theme.Radius.card))
         }
-        .padding(.horizontal, Theme.Spacing.loose)
+        .padding(.horizontal, Theme.Spacing.regular)
+        .padding(.top, Theme.Spacing.tight)
+        .padding(.bottom, Theme.Spacing.loose)
         .frame(maxWidth: .infinity, alignment: .leading)
+        .frame(maxHeight: .infinity, alignment: .top)
         .background(AppBackground())
     }
 
@@ -499,9 +518,9 @@ private struct WorkoutActionsSheet: View {
         Button(action: perform) {
             HStack(spacing: Theme.Spacing.regular) {
                 Image(systemName: icon)
-                    .font(.title3)
+                    .font(.body.weight(.semibold))
                     .foregroundStyle(.tint)
-                    .frame(width: 34, height: 44)
+                    .frame(width: 28)
                 VStack(alignment: .leading, spacing: 2) {
                     Text(title)
                         .font(.subheadline.weight(.semibold))
@@ -515,11 +534,10 @@ private struct WorkoutActionsSheet: View {
                     .font(.caption.weight(.semibold))
                     .foregroundStyle(.tertiary)
             }
-            .padding(.vertical, Theme.Spacing.tight)
+            .padding(.horizontal, Theme.Spacing.regular)
+            .frame(minHeight: 68)
             .frame(maxWidth: .infinity, alignment: .leading)
-            .overlay(alignment: .top) {
-                Theme.Palette.rule(scheme).frame(height: 1)
-            }
+            .contentShape(Rectangle())
         }
         .buttonStyle(.plain)
         .accessibilityLabel(title)
