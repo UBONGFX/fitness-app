@@ -1,6 +1,9 @@
 import SwiftData
 import SwiftUI
 
+/// Space for the floating bottom navigation, including its glass add action.
+private let historyBottomClearance: CGFloat = 100
+
 /// Recent finished sessions, shown on the training start screen.
 struct HistoryCard: View {
     let sessions: [WorkoutSession]
@@ -97,6 +100,7 @@ struct AllSessionsView: View {
             }
             .padding(.horizontal, Theme.Spacing.regular)
             .padding(.vertical, Theme.Spacing.regular)
+            .padding(.bottom, historyBottomClearance)
         }
         .scrollEdgeEffectStyle(.soft, for: .top)
         .clearsBottomAccessory()
@@ -189,6 +193,7 @@ struct SessionDetailView: View {
                     }
                 }
                 .padding(Theme.Spacing.regular)
+                .padding(.bottom, historyBottomClearance)
             }
         }
         .scrollEdgeEffectStyle(.soft, for: .top)
