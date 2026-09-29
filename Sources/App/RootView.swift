@@ -41,6 +41,7 @@ struct RootView: View {
     @State private var requestedWorkoutAction: WorkoutAction?
     @State private var showingFinishConfirmation = false
     @AccessibilityFocusState private var finishTitleFocused: Bool
+    @Namespace private var tabSelectionGlass
 
     private var showAccessory: Bool {
         restTimer.isRunning || (!activeSessions.isEmpty && selection == .training)
@@ -272,12 +273,22 @@ struct RootView: View {
             .frame(height: 48)
             .background {
                 if selection == tab {
-                    Capsule().fill(Theme.Palette.raised(colorScheme).opacity(0.75))
+                    if reduceMotion {
+                        Capsule().fill(Theme.Palette.raised(colorScheme).opacity(0.75))
+                    } else {
+                        Capsule()
+                            .fill(Theme.Palette.raised(colorScheme).opacity(0.75))
+                            .matchedGeometryEffect(id: "activeTab", in: tabSelectionGlass)
+                    }
                 }
             }
             .contentShape(Capsule())
         }
         .buttonStyle(.plain)
+        .animation(
+            reduceMotion ? .easeOut(duration: 0.15) : .snappy(duration: 0.32, extraBounce: 0.08),
+            value: selection
+        )
         .accessibilityLabel(title)
         .accessibilityAddTraits(selection == tab ? .isSelected : [])
     }
