@@ -132,8 +132,8 @@ struct RootView: View {
                             showingWorkoutActions = true
                         } label: {
                             Image(systemName: "plus")
-                                .font(.title3.weight(.semibold))
-                                .frame(width: 56, height: 56)
+                                .font(.headline.weight(.semibold))
+                                .frame(width: 44, height: 44)
                         }
                         .buttonStyle(.glass)
                         .buttonBorderShape(.circle)
