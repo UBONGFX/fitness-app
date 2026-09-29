@@ -12,6 +12,7 @@ struct ExerciseProgressView: View {
     let exerciseName: String
     let exerciseID: UUID?
     let sessions: [WorkoutSession]
+    @State private var selectedPoint: ExercisePoint?
 
     /// Newest first, the order the session list reads in.
     private var entries: [ExerciseHistoryEntry] {
@@ -117,6 +118,7 @@ struct ExerciseProgressView: View {
         GlassCard {
             VStack(alignment: .leading, spacing: Theme.Spacing.tight) {
                 SectionHeader(title: "Verlauf", subtitle: "Arbeitsgewicht je Einheit")
+                selectionReadout
                 chart
                     .frame(height: 170)
                     // Swift Charts annotations never reach the accessibility tree,
@@ -127,6 +129,15 @@ struct ExerciseProgressView: View {
                     .accessibilityIdentifier("progressChart")
             }
         }
+    }
+
+    private var selectionReadout: some View {
+        Text(selectedPoint.map {
+            "\($0.date.formatted(.dateTime.day().month(.abbreviated).year())) · \(Progression.format($0.workingWeight)) kg"
+        } ?? "Im Verlauf streichen, um eine Einheit zu sehen")
+            .font(.caption.monospacedDigit())
+            .foregroundStyle(selectedPoint == nil ? .secondary : .primary)
+            .accessibilityIdentifier("progressChartSelection")
     }
 
     private var chart: some View {
@@ -146,11 +157,18 @@ struct ExerciseProgressView: View {
                 )
                 .symbolSize(60)
                 .foregroundStyle(.tint)
-                .annotation(position: .top, spacing: 4, overflowResolution: .init(x: .fit, y: .disabled)) {
-                    Text(Progression.format(point.workingWeight))
-                        .font(.caption2.weight(.semibold).monospacedDigit())
-                        .foregroundStyle(.secondary)
-                }
+            }
+
+            if let selectedPoint {
+                RuleMark(x: .value("Auswahl", selectedPoint.date))
+                    .foregroundStyle(.secondary.opacity(0.65))
+                    .lineStyle(StrokeStyle(lineWidth: 1, dash: [3, 3]))
+                PointMark(
+                    x: .value("Auswahl", selectedPoint.date),
+                    y: .value("Gewicht", selectedPoint.workingWeight)
+                )
+                .symbolSize(110)
+                .foregroundStyle(.tint)
             }
         }
         .chartYScale(domain: ExerciseProgress.range(of: points.map(\.workingWeight)) ?? 0...1)
@@ -165,13 +183,29 @@ struct ExerciseProgressView: View {
             }
         }
         .chartXAxis {
-            AxisMarks(values: points.map(\.date)) { value in
+            AxisMarks(values: ChartDateAxis.endpoints(for: points.map(\.date))) { value in
                 AxisValueLabel {
                     if let date = value.as(Date.self) {
                         Text(date, format: .dateTime.day().month(.abbreviated))
                             .font(.caption2)
                     }
                 }
+            }
+        }
+        .chartOverlay { proxy in
+            GeometryReader { geometry in
+                Rectangle()
+                    .fill(.clear)
+                    .contentShape(Rectangle())
+                    .gesture(DragGesture(minimumDistance: 0).onChanged { gesture in
+                        guard let plotFrame = proxy.plotFrame else { return }
+                        let plotArea = geometry[plotFrame]
+                        let x = gesture.location.x - plotArea.origin.x
+                        guard x >= 0, x <= plotArea.width,
+                              let date: Date = proxy.value(atX: x)
+                        else { return }
+                        selectedPoint = ExerciseProgress.nearest(to: date, in: points)
+                    })
             }
         }
     }
@@ -245,21 +279,28 @@ struct ExerciseProgressView: View {
 
     // MARK: - Sessions
 
-    /// Every set of that day, not a one-line summary: the summary is what the
-    /// session screen already says, and repeating it was the old problem.
+    /// A compact training record: the date orients the scan, the volume gives
+    /// context, and the individual sets remain available without competing with
+    /// either one.
     private func sessionCard(_ entry: ExerciseHistoryEntry) -> some View {
         GlassCard {
-            VStack(alignment: .leading, spacing: Theme.Spacing.tight) {
-                HStack(alignment: .firstTextBaseline) {
-                    Text(entry.date, format: .dateTime.weekday(.abbreviated).day().month(.abbreviated).year())
-                        .font(.subheadline.weight(.medium))
-                    Text(entry.sessionName)
-                        .font(.caption2)
-                        .foregroundStyle(.secondary)
+            VStack(alignment: .leading, spacing: 12) {
+                HStack(alignment: .top, spacing: Theme.Spacing.tight) {
+                    VStack(alignment: .leading, spacing: 2) {
+                        Text(entry.date, format: .dateTime.weekday(.abbreviated).day().month(.abbreviated).year())
+                            .font(.headline)
+                        Text(entry.sessionName)
+                            .font(.caption)
+                            .foregroundStyle(.secondary)
+                    }
                     Spacer(minLength: Theme.Spacing.tight)
-                    Text("\(Int(entry.sets.reduce(0) { $0 + $1.load })) kg")
-                        .font(.caption.monospacedDigit())
-                        .foregroundStyle(.secondary)
+                    VStack(alignment: .trailing, spacing: 2) {
+                        Text("\(Int(entry.sets.reduce(0) { $0 + $1.load })) kg")
+                            .font(.subheadline.weight(.semibold).monospacedDigit())
+                        Text("Volumen")
+                            .font(.caption2)
+                            .foregroundStyle(.secondary)
+                    }
                 }
 
                 VStack(spacing: 0) {
@@ -279,7 +320,7 @@ struct ExerciseProgressView: View {
                             }
                             Spacer()
                         }
-                        .padding(.vertical, 5)
+                        .padding(.vertical, 6)
                         .accessibilityElement(children: .ignore)
                         .accessibilityLabel(
                             "Satz \(index + 1), \(set.summary)"

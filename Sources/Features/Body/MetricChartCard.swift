@@ -6,6 +6,7 @@ struct MetricChartCard: View {
     let measurements: [BodyMeasurement]
     var goal: MetricGoal?
     @Binding var metric: BodyMetric
+    @State private var selectedPoint: MetricPoint?
 
     private var points: [MetricPoint] {
         MeasurementSeries.points(for: metric, from: measurements)
@@ -13,19 +14,6 @@ struct MetricChartCard: View {
 
     private var change: Double? {
         MeasurementSeries.change(in: points)
-    }
-
-    /// Which points get their value printed above them.
-    ///
-    /// Replaces the tap-to-select overlay: `chartXSelection` never produced a
-    /// selection in any test, tap or drag, and Swift Charts keeps annotations out
-    /// of the accessibility tree anyway — so the values were neither reliable nor
-    /// readable. With a handful of monthly measurements, printing them is simply
-    /// better than hiding them behind a gesture. Beyond six points only the ends
-    /// are labelled, or the plot turns into a wall of numbers.
-    private var labelledPointIDs: Set<UUID> {
-        guard points.count > 6 else { return Set(points.map(\.id)) }
-        return Set([points.first, points.last].compactMap { $0?.id })
     }
 
     /// A spoken summary of the series, because the printed labels above are
@@ -69,10 +57,20 @@ struct MetricChartCard: View {
                         .foregroundStyle(.secondary)
                         .frame(maxWidth: .infinity, minHeight: 160)
                 } else {
+                    selectionReadout
                     chart
                 }
             }
         }
+    }
+
+    private var selectionReadout: some View {
+        Text(selectedPoint.map {
+            "\($0.date.formatted(.dateTime.day().month(.abbreviated).year())) · \(metric.formatted($0.value))"
+        } ?? "Im Verlauf streichen, um einen Messwert zu sehen")
+            .font(.caption.monospacedDigit())
+            .foregroundStyle(selectedPoint == nil ? .secondary : .primary)
+            .accessibilityIdentifier("metricChartSelection")
     }
 
     private var header: some View {
@@ -134,13 +132,18 @@ struct MetricChartCard: View {
                 )
                 .symbolSize(60)
                 .foregroundStyle(.tint)
-                .annotation(position: .top, spacing: 4, overflowResolution: .init(x: .fit, y: .disabled)) {
-                    if labelledPointIDs.contains(point.id) {
-                        Text(metric.formatted(point.value))
-                            .font(.caption2.weight(.semibold).monospacedDigit())
-                            .foregroundStyle(.secondary)
-                    }
-                }
+            }
+
+            if let selectedPoint {
+                RuleMark(x: .value("Auswahl", selectedPoint.date))
+                    .foregroundStyle(.secondary.opacity(0.65))
+                    .lineStyle(StrokeStyle(lineWidth: 1, dash: [3, 3]))
+                PointMark(
+                    x: .value("Auswahl", selectedPoint.date),
+                    y: .value(metric.displayName, selectedPoint.value)
+                )
+                .symbolSize(110)
+                .foregroundStyle(.tint)
             }
         }
         .chartYScale(domain: MeasurementSeries.range(for: points, covering: goalBounds) ?? 0...1)
@@ -157,13 +160,29 @@ struct MetricChartCard: View {
             }
         }
         .chartXAxis {
-            AxisMarks(values: points.map(\.date)) { value in
+            AxisMarks(values: ChartDateAxis.endpoints(for: points.map(\.date))) { value in
                 AxisGridLine().foregroundStyle(.secondary.opacity(0.25))
                 AxisValueLabel {
                     if let date = value.as(Date.self) {
                         Text(date, format: .dateTime.month(.abbreviated).year(.twoDigits))
                     }
                 }
+            }
+        }
+        .chartOverlay { proxy in
+            GeometryReader { geometry in
+                Rectangle()
+                    .fill(.clear)
+                    .contentShape(Rectangle())
+                    .gesture(DragGesture(minimumDistance: 0).onChanged { gesture in
+                        guard let plotFrame = proxy.plotFrame else { return }
+                        let plotArea = geometry[plotFrame]
+                        let x = gesture.location.x - plotArea.origin.x
+                        guard x >= 0, x <= plotArea.width,
+                              let date: Date = proxy.value(atX: x)
+                        else { return }
+                        selectedPoint = MeasurementSeries.nearest(to: date, in: points)
+                    })
             }
         }
         .frame(height: 200)

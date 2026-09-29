@@ -11,6 +11,8 @@ struct HomeView: View {
 
     @State private var period = GoalPeriod.month
     @State private var showingSettings = false
+    @State private var selectedGoalPoint: MetricPoint?
+    @State private var selectedExercisePoint: ExercisePoint?
 
     @Binding var selectedTab: AppTab
     @Binding var appearance: AppAppearance
@@ -242,6 +244,11 @@ struct HomeView: View {
                     .frame(maxWidth: .infinity, minHeight: 36, alignment: .leading)
             } else {
                 VStack(alignment: .leading, spacing: 4) {
+                    Text(selectedGoalPoint.map {
+                        "\($0.date.formatted(.dateTime.day().month(.abbreviated).year())) · \(goal.metric.formatted($0.value))"
+                    } ?? "Im Verlauf streichen, um einen Messwert zu sehen")
+                        .font(.caption.monospacedDigit())
+                        .foregroundStyle(selectedGoalPoint == nil ? .secondary : .primary)
                     Chart {
                         if goal.hasTarget {
                             RuleMark(y: .value("Ziel unten", min(goal.lowerBound, goal.upperBound)))
@@ -260,6 +267,14 @@ struct HomeView: View {
                             PointMark(x: .value("Datum", point.date), y: .value("Wert", point.value))
                                 .foregroundStyle(Color.accentColor)
                         }
+                        if let selectedGoalPoint {
+                            RuleMark(x: .value("Auswahl", selectedGoalPoint.date))
+                                .foregroundStyle(.secondary.opacity(0.65))
+                                .lineStyle(StrokeStyle(lineWidth: 1, dash: [3, 3]))
+                            PointMark(x: .value("Auswahl", selectedGoalPoint.date), y: .value("Wert", selectedGoalPoint.value))
+                                .symbolSize(110)
+                                .foregroundStyle(Color.accentColor)
+                        }
                     }
                     .chartYScale(domain: MeasurementSeries.range(
                         for: points,
@@ -268,9 +283,7 @@ struct HomeView: View {
                     .chartXScale(domain: goalXDomain(points))
                     .chartXAxis {
                         if !dynamicTypeSize.isAccessibilitySize {
-                            AxisMarks(values: points.count > 6
-                                      ? [points.first, points.last].compactMap { $0?.date }
-                                      : points.map(\.date)) { value in
+                            AxisMarks(values: ChartDateAxis.endpoints(for: points.map(\.date))) { value in
                                 AxisValueLabel {
                                     if let date = value.as(Date.self) {
                                         Text(date, format: .dateTime.day(.twoDigits).month(.twoDigits))
@@ -278,6 +291,22 @@ struct HomeView: View {
                                     }
                                 }
                             }
+                        }
+                    }
+                    .chartOverlay { proxy in
+                        GeometryReader { geometry in
+                            Rectangle()
+                                .fill(.clear)
+                                .contentShape(Rectangle())
+                                .gesture(DragGesture(minimumDistance: 0).onChanged { gesture in
+                                    guard let plotFrame = proxy.plotFrame else { return }
+                                    let plotArea = geometry[plotFrame]
+                                    let x = gesture.location.x - plotArea.origin.x
+                                    guard x >= 0, x <= plotArea.width,
+                                          let date: Date = proxy.value(atX: x)
+                                    else { return }
+                                    selectedGoalPoint = MeasurementSeries.nearest(to: date, in: points)
+                                })
                         }
                     }
                     .frame(height: 132)
@@ -382,16 +411,57 @@ struct HomeView: View {
     }
 
     private var exerciseChart: some View {
-        Chart(exercisePoints) { point in
-            LineMark(x: .value("Datum", point.date), y: .value("Gewicht", point.workingWeight))
-                .foregroundStyle(Color.accentColor)
-                .lineStyle(StrokeStyle(lineWidth: 2))
-            PointMark(x: .value("Datum", point.date), y: .value("Gewicht", point.workingWeight))
-                .foregroundStyle(Color.accentColor)
+        VStack(alignment: .leading, spacing: 4) {
+            Text(selectedExercisePoint.map {
+                "\($0.date.formatted(.dateTime.day().month(.abbreviated).year())) · \(Progression.format($0.workingWeight)) kg"
+            } ?? "Im Verlauf streichen, um eine Einheit zu sehen")
+                .font(.caption.monospacedDigit())
+                .foregroundStyle(selectedExercisePoint == nil ? .secondary : .primary)
+            Chart(exercisePoints) { point in
+                LineMark(x: .value("Datum", point.date), y: .value("Gewicht", point.workingWeight))
+                    .foregroundStyle(Color.accentColor)
+                    .lineStyle(StrokeStyle(lineWidth: 2))
+                PointMark(x: .value("Datum", point.date), y: .value("Gewicht", point.workingWeight))
+                    .foregroundStyle(Color.accentColor)
+                if let selectedExercisePoint {
+                    RuleMark(x: .value("Auswahl", selectedExercisePoint.date))
+                        .foregroundStyle(.secondary.opacity(0.65))
+                        .lineStyle(StrokeStyle(lineWidth: 1, dash: [3, 3]))
+                    PointMark(x: .value("Auswahl", selectedExercisePoint.date), y: .value("Gewicht", selectedExercisePoint.workingWeight))
+                        .symbolSize(110)
+                        .foregroundStyle(Color.accentColor)
+                }
+            }
+            .chartYScale(domain: ExerciseProgress.range(of: exercisePoints.map(\.workingWeight)) ?? 0...1)
+            .chartXAxis {
+                AxisMarks(values: ChartDateAxis.endpoints(for: exercisePoints.map(\.date))) { value in
+                    AxisValueLabel {
+                        if let date = value.as(Date.self) {
+                            Text(date, format: .dateTime.day(.twoDigits).month(.twoDigits))
+                                .font(.caption2)
+                        }
+                    }
+                }
+            }
+            .chartOverlay { proxy in
+                GeometryReader { geometry in
+                    Rectangle()
+                        .fill(.clear)
+                        .contentShape(Rectangle())
+                        .gesture(DragGesture(minimumDistance: 0).onChanged { gesture in
+                            guard let plotFrame = proxy.plotFrame else { return }
+                            let plotArea = geometry[plotFrame]
+                            let x = gesture.location.x - plotArea.origin.x
+                            guard x >= 0, x <= plotArea.width,
+                                  let date: Date = proxy.value(atX: x)
+                            else { return }
+                            selectedExercisePoint = ExerciseProgress.nearest(to: date, in: exercisePoints)
+                        })
+                }
+            }
+            .frame(height: 132)
+            .accessibilityLabel("Arbeitsgewicht über die Zeit")
         }
-        .chartYScale(domain: ExerciseProgress.range(of: exercisePoints.map(\.workingWeight)) ?? 0...1)
-        .frame(height: 132)
-        .accessibilityLabel("Arbeitsgewicht über die Zeit")
     }
 
     private var trainingRecord: some View {

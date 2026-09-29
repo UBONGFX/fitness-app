@@ -66,6 +66,13 @@ nonisolated enum ExerciseProgress {
         return last.workingWeight - first.workingWeight
     }
 
+    /// The plotted session nearest to a finger position on a time axis.
+    static func nearest(to date: Date, in points: [ExercisePoint]) -> ExercisePoint? {
+        points.min { lhs, rhs in
+            abs(lhs.date.timeIntervalSince(date)) < abs(rhs.date.timeIntervalSince(date))
+        }
+    }
+
     static func volumeChange(_ points: [ExercisePoint]) -> Double? {
         guard points.count > 1, let first = points.first, let last = points.last else { return nil }
         return last.volume - first.volume
