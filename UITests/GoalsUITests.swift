@@ -102,6 +102,19 @@ final class GoalsUITests: XCTestCase {
     }
 
     @MainActor
+    func testSettingsGeneralGroupStartsWithoutAnExtraSeparator() {
+        let app = XCUIApplication()
+        app.launchArguments += ["-uiTesting"]
+        app.launch()
+
+        let settings = app.buttons["openSettings"]
+        XCTAssertTrue(settings.waitForExistence(timeout: 10))
+        settings.tap()
+        XCTAssertTrue(app.buttons["openAppearance"].waitForExistence(timeout: 5))
+        capture("Settings general group")
+    }
+
+    @MainActor
     private func capture(_ name: String) {
         let attachment = XCTAttachment(screenshot: XCUIScreen.main.screenshot())
         attachment.name = name

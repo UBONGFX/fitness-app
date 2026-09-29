@@ -43,7 +43,10 @@ extension View {
         cornerRadius: CGFloat = Theme.Radius.control
     ) -> some View {
         listRowBackground(SolidRowBackground(position: position, cornerRadius: cornerRadius))
-        .listRowSeparator(position.showsSeparator ? .visible : .hidden)
+        // A grouped record only separates adjacent rows. Letting the system
+        // choose both edges drew an extra line above a group's first row.
+        .listRowSeparator(.hidden, edges: .top)
+        .listRowSeparator(position.showsSeparator ? .visible : .hidden, edges: .bottom)
     }
 }
 
