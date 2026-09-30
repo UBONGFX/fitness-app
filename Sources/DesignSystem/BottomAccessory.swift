@@ -1,6 +1,9 @@
 import SwiftUI
 
 extension EnvironmentValues {
+    /// The shared glass tab navigation that floats over every root-tab screen.
+    @Entry var bottomNavigationHeight: CGFloat = 0
+
     /// How much room the floating pause bar takes at the bottom of the screen.
     ///
     /// Set once by `RootView`, which is the only place that knows whether the
@@ -9,7 +12,8 @@ extension EnvironmentValues {
 }
 
 extension View {
-    /// Keeps scrolling content clear of the floating pause bar.
+    /// Keeps scrolling content clear of the floating navigation and, when it is
+    /// visible, the pause bar above it.
     ///
     /// The bar is an overlay, not part of the layout: content scrolls underneath
     /// it and the last rows end up unreachable — a tap there hits the bar and
@@ -22,9 +26,10 @@ extension View {
 }
 
 private struct BottomAccessoryClearance: ViewModifier {
+    @Environment(\.bottomNavigationHeight) private var navigationHeight
     @Environment(\.bottomAccessoryHeight) private var height
 
     func body(content: Content) -> some View {
-        content.safeAreaPadding(.bottom, height)
+        content.safeAreaPadding(.bottom, navigationHeight + height)
     }
 }

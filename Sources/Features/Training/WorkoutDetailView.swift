@@ -78,6 +78,8 @@ struct WorkoutDetailView: View {
             }
             .padding(Theme.Spacing.regular)
         }
+        .clearsBottomAccessory()
+        .scrollEdgeEffectStyle(.soft, for: .top)
         .background(AppBackground())
         .navigationTitle(template.name)
         .navigationBarTitleDisplayMode(.inline)

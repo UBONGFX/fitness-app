@@ -3,8 +3,6 @@ import SwiftUI
 
 struct BodyView: View {
     var isUsingFallbackStore = false
-    /// The root's floating navigation overlaps the end of this tab's scroll views.
-    private let bottomNavigationClearance: CGFloat = 80
     @Environment(\.colorScheme) private var scheme
 
     @Environment(\.modelContext) private var context
@@ -179,7 +177,6 @@ struct BodyView: View {
                     }
                 }
                 .padding(Theme.Spacing.regular)
-                .padding(.bottom, bottomNavigationClearance)
             }
         }
         .scrollEdgeEffectStyle(.soft, for: .top)
@@ -231,7 +228,6 @@ struct BodyView: View {
                     }
                 }
                 .padding(Theme.Spacing.regular)
-                .padding(.bottom, bottomNavigationClearance)
             }
         }
         .scrollEdgeEffectStyle(.soft, for: .top)

@@ -115,7 +115,6 @@ struct TrainingView: View {
             }
             .padding(.horizontal, Theme.Spacing.regular)
             .padding(.top, Theme.Spacing.loose)
-            .padding(.bottom, 100)
             .frame(maxWidth: 640)
             .frame(maxWidth: .infinity)
         }
@@ -382,6 +381,8 @@ private struct ExerciseHistoryIndexView: View {
             }
             .padding(Theme.Spacing.regular)
         }
+        .clearsBottomAccessory()
+        .scrollEdgeEffectStyle(.soft, for: .top)
         .searchable(text: $search, prompt: "Geloggte Übung suchen")
         .background(AppBackground())
         .navigationTitle("Übungsfortschritt")

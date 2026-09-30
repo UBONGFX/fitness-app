@@ -51,6 +51,15 @@ struct RootView: View {
         activeSessions.isEmpty
     }
 
+    /// The navigation is deliberately floating. Content needs a matching
+    /// reserved area because a nested `NavigationStack` does not always inherit
+    /// TabView's safe-area inset after a push.
+    private var bottomNavigationHeight: CGFloat { 100 }
+
+    private var bottomAccessoryHeight: CGFloat {
+        showAccessory ? 64 : 0
+    }
+
     var body: some View {
         ZStack {
             TabView(selection: $selection) {
@@ -101,6 +110,8 @@ struct RootView: View {
         }
         .environment(restTimer)
         .environment(saveReporter)
+        .environment(\.bottomNavigationHeight, bottomNavigationHeight)
+        .environment(\.bottomAccessoryHeight, bottomAccessoryHeight)
         // A failed write used to vanish silently; now it surfaces here.
         .alert(
             "Speichern fehlgeschlagen",

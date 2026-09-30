@@ -8,7 +8,6 @@ import SwiftUI
 /// one screen deeper — a page that repeats its own parent is worse than no page.
 struct ExerciseProgressView: View {
     @ScaledMetric(relativeTo: .caption) private var indexWidth: CGFloat = 22
-    private let bottomNavigationClearance: CGFloat = 100
 
     let exerciseName: String
     let exerciseID: UUID?
@@ -44,9 +43,6 @@ struct ExerciseProgressView: View {
                     }
                 }
                 .padding(Theme.Spacing.regular)
-                // This detail is pushed above RootView's floating navigation.
-                // `clearsBottomAccessory()` only accounts for the optional timer.
-                .padding(.bottom, bottomNavigationClearance)
             }
         }
         .scrollEdgeEffectStyle(.soft, for: .top)

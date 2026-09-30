@@ -105,6 +105,7 @@ struct PlanDayEditorView: View {
             .glassRow()
         }
         .glassFormBackground()
+        .clearsBottomAccessory()
         .navigationTitle(day.name)
         .navigationBarTitleDisplayMode(.inline)
         .toolbar { EditButton() }
@@ -309,6 +310,7 @@ struct PlanHeaderEditorView: View {
             }
         }
         .glassFormBackground()
+        .clearsBottomAccessory()
         .navigationTitle("Plan")
         .navigationBarTitleDisplayMode(.inline)
         .onDisappear {

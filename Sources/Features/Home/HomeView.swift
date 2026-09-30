@@ -90,7 +90,6 @@ struct HomeView: View {
                 }
                 .padding(.horizontal, Theme.Spacing.regular)
                 .padding(.top, Theme.Spacing.regular)
-                .padding(.bottom, 100)
                 .frame(maxWidth: 640)
                 .frame(maxWidth: .infinity)
             }
