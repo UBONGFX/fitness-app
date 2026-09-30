@@ -21,13 +21,22 @@ struct HomeView: View {
     private var trends: [GoalTrend] {
         GoalTrends.trends(goals: goals, measurements: measurements, period: period)
     }
+    private var primaryTrends: [GoalTrend] {
+        trends.filter { goal(for: $0)?.priority == .primary }
+    }
+    private var secondaryTrends: [GoalTrend] {
+        trends.filter { goal(for: $0)?.priority == .secondary }
+    }
     private var featuredTrend: GoalTrend? {
         // A primary goal stays in focus even before its first measurement.
-        trends.first
+        primaryTrends.first ?? trends.first
     }
     private var featuredGoal: MetricGoal? {
-        guard let featuredTrend else { return nil }
-        return goals.first { $0.metric == featuredTrend.metric }
+        featuredTrend.flatMap(goal(for:))
+    }
+
+    private func goal(for trend: GoalTrend) -> MetricGoal? {
+        goals.first { $0.metric == trend.metric }
     }
     private var goalPoints: [MetricPoint] {
         guard let featuredTrend else { return [] }
@@ -86,7 +95,7 @@ struct HomeView: View {
                     goalRecord
                     exerciseRecord
                     trainingRecord
-                    if trends.count > 1 { otherGoalsRecord }
+                    if !secondaryTrends.isEmpty { otherGoalsRecord }
                 }
                 .padding(.horizontal, Theme.Spacing.regular)
                 .padding(.top, Theme.Spacing.regular)
@@ -155,11 +164,9 @@ struct HomeView: View {
             VStack(alignment: .leading, spacing: Theme.Spacing.regular) {
                 HStack {
                     VStack(alignment: .leading, spacing: 2) {
-                        Text(featuredTrend?.metric.displayName ?? "Meine Ziele")
+                        Text(primaryTrends.isEmpty ? "Meine Ziele" : "Primäre Ziele")
                             .font(.system(.title2, design: .serif).weight(.semibold))
-                        Text(featuredGoal?.priority == .primary
-                             ? "Primäres Ziel · \(periodRangeText)"
-                             : periodRangeText)
+                        Text(periodRangeText)
                             .font(.caption)
                             .foregroundStyle(.secondary)
                     }
@@ -169,6 +176,8 @@ struct HomeView: View {
                         .foregroundStyle(.tertiary)
                 }
                 if let featuredTrend, let featuredGoal {
+                    Text(featuredTrend.metric.displayName)
+                        .font(.title3.weight(.semibold))
                     goalMetrics(featuredTrend)
                     goalChart(goal: featuredGoal, points: goalPoints)
                     if hasGoalReadingInPeriod && featuredTrend.deltaText != nil {
@@ -179,6 +188,15 @@ struct HomeView: View {
                         Text("Keine Messung in diesem Zeitraum · letzter Wert vom \(latestGoalDate(featuredTrend.metric))")
                             .font(.caption)
                             .foregroundStyle(.secondary)
+                    }
+                    if primaryTrends.count > 1 {
+                        Divider()
+                        Text("Weitere primäre Ziele")
+                            .font(.caption.weight(.semibold))
+                            .foregroundStyle(.secondary)
+                        ForEach(primaryTrends.dropFirst()) { trend in
+                            goalSummaryRow(trend)
+                        }
                     }
                 } else {
                     Text("Lege unter Körper ein Ziel fest. Hier siehst du dann deine Veränderung im gewählten Zeitraum.")
@@ -495,40 +513,45 @@ struct HomeView: View {
     private var otherGoalsRecord: some View {
         GlassCard {
             VStack(alignment: .leading, spacing: Theme.Spacing.regular) {
-                SectionHeader(title: "Weitere Ziele", subtitle: "Stand und Veränderung")
-                ForEach(Array(trends.filter { $0.id != featuredTrend?.id }.prefix(3))) { trend in
-                    VStack(alignment: .leading, spacing: Theme.Spacing.tight) {
-                        HStack(alignment: .firstTextBaseline) {
-                            Text(trend.metric.displayName)
-                                .font(.subheadline.weight(.semibold))
-                            Spacer(minLength: Theme.Spacing.tight)
-                            Text(trend.currentText ?? "—")
-                                .font(.subheadline.weight(.semibold).monospacedDigit())
-                            Text(trend.hasTarget ? "→ \(trend.targetText)" : "Beobachten")
-                                .font(.caption)
-                                .foregroundStyle(.secondary)
-                        }
-                        if let evaluation = trend.evaluation {
-                            HStack(spacing: Theme.Spacing.tight) {
-                                ProgressView(value: evaluation.progress)
-                                    .tint(.accentColor)
-                                Text(evaluation.progress, format: .percent.precision(.fractionLength(0)))
-                                    .font(.caption2.monospacedDigit())
-                                    .foregroundStyle(.secondary)
-                            }
-                        }
-                        if hasReadingInPeriod(for: trend.metric), trend.deltaText != nil {
-                            Text(goalChangeText(trend))
-                                .font(.caption2)
-                                .foregroundStyle(.secondary)
-                        }
-                    }
-                    Divider()
+                SectionHeader(title: "Sekundäre Ziele", subtitle: "Stand und Veränderung")
+                ForEach(secondaryTrends.prefix(3)) { trend in
+                    goalSummaryRow(trend)
                 }
-                Button("Alle \(trends.count) Ziele ansehen") { selectedTab = .body }
+                Button("Alle \(goals.count) Ziele ansehen") { selectedTab = .body }
                     .buttonStyle(.bordered)
             }
         }
+    }
+
+    private func goalSummaryRow(_ trend: GoalTrend) -> some View {
+        VStack(alignment: .leading, spacing: Theme.Spacing.tight) {
+            HStack(alignment: .firstTextBaseline) {
+                Text(trend.metric.displayName)
+                    .font(.subheadline.weight(.semibold))
+                Spacer(minLength: Theme.Spacing.tight)
+                Text(trend.currentText ?? "—")
+                    .font(.subheadline.weight(.semibold).monospacedDigit())
+                Text(trend.hasTarget ? "→ \(trend.targetText)" : "Beobachten")
+                    .font(.caption)
+                    .foregroundStyle(.secondary)
+            }
+            if let evaluation = trend.evaluation {
+                HStack(spacing: Theme.Spacing.tight) {
+                    ProgressView(value: evaluation.progress)
+                        .tint(.accentColor)
+                    Text(evaluation.progress, format: .percent.precision(.fractionLength(0)))
+                        .font(.caption2.monospacedDigit())
+                        .foregroundStyle(.secondary)
+                }
+            }
+            if hasReadingInPeriod(for: trend.metric), trend.deltaText != nil {
+                Text(goalChangeText(trend))
+                    .font(.caption2)
+                    .foregroundStyle(.secondary)
+            }
+        }
+        .padding(.vertical, 2)
+        .accessibilityElement(children: .combine)
     }
 
     private func metric(_ label: String, _ value: String, isAccent: Bool = false) -> some View {
