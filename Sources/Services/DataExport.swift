@@ -159,6 +159,7 @@ nonisolated enum DataExport {
                             weight: set.weight,
                             reps: set.reps,
                             rir: set.rir,
+                            type: set.type.rawValue,
                             completedAt: set.completedAt
                         )
                     }

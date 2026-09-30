@@ -98,6 +98,8 @@ nonisolated struct ExportedSet: Codable, Equatable, Sendable {
     var weight: Double
     var reps: Int
     var rir: Int?
+    /// Missing in older exports means an ordinary working set.
+    var type: String?
     var completedAt: Date
 }
 

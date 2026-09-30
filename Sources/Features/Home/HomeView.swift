@@ -70,6 +70,9 @@ struct HomeView: View {
     private var performedSessions: [WorkoutSession] {
         sessions.filter { interval.contains($0.startedAt) && $0.completedSets > 0 }
     }
+    private var weeklyMuscleProgress: [MuscleWeekProgress] {
+        ActualVolume.weeklyProgress(from: sessions)
+    }
     private var activeSession: WorkoutSession? { sessions.first(where: \.isActive) }
 
     var body: some View {
@@ -503,6 +506,29 @@ struct HomeView: View {
                     Text(period.thisPeriodText.capitalized)
                         .font(.caption)
                         .foregroundStyle(.secondary)
+                    if period == .week, !weeklyMuscleProgress.isEmpty {
+                        Divider()
+                        Text("Effektive Sätze · Wochenziel 10")
+                            .font(.caption.weight(.semibold))
+                            .foregroundStyle(.secondary)
+                        ForEach(weeklyMuscleProgress.prefix(3)) { progress in
+                            HStack(alignment: .firstTextBaseline) {
+                                Text(progress.muscle.displayName)
+                                    .font(.footnote)
+                                Spacer(minLength: Theme.Spacing.tight)
+                                Text("\(WeeklyVolume.format(progress.effectiveSets)) / 10")
+                                    .font(.footnote.weight(.semibold).monospacedDigit())
+                                Text(progress.hasReachedTarget
+                                     ? "Ziel erreicht"
+                                     : "noch \(WeeklyVolume.format(progress.remainingSets))")
+                                    .font(.caption2)
+                                    .foregroundStyle(progress.hasReachedTarget ? Color.accentColor : .secondary)
+                            }
+                        }
+                        Text("Direkte Sätze + halbe indirekte Beteiligung. 10 ist ein Startziel, keine feste Wachstumsgrenze.")
+                            .font(.caption2)
+                            .foregroundStyle(.secondary)
+                    }
                 }
             }
         }

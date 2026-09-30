@@ -125,7 +125,33 @@ final class LoggedExercise {
     var nextOrder: Int { (sortedSets.last?.order ?? -1) + 1 }
 }
 
-/// A single working set.
+nonisolated enum SetType: String, CaseIterable, Codable, Hashable, Sendable {
+    case warmUp, working, drop, failure, superset
+
+    var displayName: String {
+        switch self {
+        case .warmUp: "Aufwärmen"
+        case .working: "Arbeitssatz"
+        case .drop: "Dropsatz"
+        case .failure: "Bis Versagen"
+        case .superset: "Supersatz"
+        }
+    }
+
+    var shortLabel: String? {
+        switch self {
+        case .warmUp: "Warm-up"
+        case .working: nil
+        case .drop: "Drop"
+        case .failure: "Versagen"
+        case .superset: "Supersatz"
+        }
+    }
+
+    var contributesToProgress: Bool { self != .warmUp }
+}
+
+/// A single logged set.
 @Model
 final class LoggedSet {
     var id: UUID = UUID()
@@ -133,6 +159,8 @@ final class LoggedSet {
     var weight: Double = 0
     var reps: Int = 0
     var rir: Int?
+    /// A raw value keeps existing stores and older exports compatible.
+    var typeRaw: String = SetType.working.rawValue
     var completedAt: Date = Date()
 
     var loggedExercise: LoggedExercise?
@@ -143,6 +171,7 @@ final class LoggedSet {
         weight: Double = 0,
         reps: Int = 0,
         rir: Int? = nil,
+        type: SetType = .working,
         completedAt: Date = Date()
     ) {
         self.id = id
@@ -150,10 +179,16 @@ final class LoggedSet {
         self.weight = weight
         self.reps = reps
         self.rir = rir
+        self.typeRaw = type.rawValue
         self.completedAt = completedAt
     }
 
     var load: Double { weight * Double(reps) }
+
+    var type: SetType {
+        get { SetType(rawValue: typeRaw) ?? .working }
+        set { typeRaw = newValue.rawValue }
+    }
 
     var weightText: String {
         weight.formatted(.number.grouping(.never).precision(.fractionLength(0...1)))

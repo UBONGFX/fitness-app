@@ -26,12 +26,29 @@ nonisolated struct VolumeComparison: Identifiable, Equatable, Sendable {
     }
 }
 
+/// A current weekly muscle total placed against a conservative, visible start
+/// target. Indirect work counts as half, matching the rest of the app.
+nonisolated struct MuscleWeekProgress: Identifiable, Equatable, Sendable {
+    let muscle: MuscleGroup
+    let effectiveSets: Double
+    let previousEffectiveSets: Double
+    let targetSets: Double
+
+    var id: String { muscle.rawValue }
+    var remainingSets: Double { max(0, targetSets - effectiveSets) }
+    var hasReachedTarget: Bool { effectiveSets >= targetSets }
+}
+
 /// Volume actually performed, counted from logged sets.
 ///
 /// Uses the same weighting as the plan side (`direct + 0,5 × indirect`), so the
 /// two numbers are comparable. Anything else would make the comparison
 /// meaningless even if each half were right on its own.
 nonisolated enum ActualVolume {
+    /// A practical starting target, not a claim of an individual growth
+    /// threshold. Users can see exactly what is counted and adjust training from
+    /// their own performance and recovery.
+    static let defaultWeeklyMuscleTarget: Double = 10
 
     /// The Monday–Sunday week containing `date`.
     ///
@@ -62,7 +79,7 @@ nonisolated enum ActualVolume {
         for session in sessions {
             for entry in session.sortedExercises {
                 guard let exercise = entry.exercise else { continue }
-                let setCount = entry.sortedSets.count
+                let setCount = entry.sortedSets.filter { $0.type.contributesToProgress }.count
                 guard setCount > 0 else { continue }
                 direct[exercise.primary, default: 0] += setCount
                 for muscle in exercise.secondary {
@@ -75,6 +92,35 @@ nonisolated enum ActualVolume {
             .map { VolumeRow(muscle: $0, directSets: direct[$0, default: 0], indirectSets: indirect[$0, default: 0]) }
             .filter { $0.directSets > 0 || $0.indirectSets > 0 }
             .sorted { $0.total > $1.total }
+    }
+
+    static func weeklyProgress(
+        from sessions: [WorkoutSession],
+        now: Date = Date(),
+        targetSets: Double = defaultWeeklyMuscleTarget
+    ) -> [MuscleWeekProgress] {
+        let currentInterval = week(containing: now)
+        let previousInterval = DateInterval(
+            start: currentInterval.start.addingTimeInterval(-7 * 86_400),
+            end: currentInterval.start
+        )
+        let current = Dictionary(uniqueKeysWithValues: rows(from: self.sessions(in: currentInterval, from: sessions)).map { ($0.muscle, $0.total) })
+        let previous = Dictionary(uniqueKeysWithValues: rows(from: self.sessions(in: previousInterval, from: sessions)).map { ($0.muscle, $0.total) })
+        return MuscleGroup.allCases.compactMap { muscle in
+            let value = current[muscle, default: 0]
+            let prior = previous[muscle, default: 0]
+            guard value > 0 || prior > 0 else { return nil }
+            return MuscleWeekProgress(
+                muscle: muscle,
+                effectiveSets: value,
+                previousEffectiveSets: prior,
+                targetSets: targetSets
+            )
+        }
+        .sorted { lhs, rhs in
+            if lhs.remainingSets != rhs.remainingSets { return lhs.remainingSets > rhs.remainingSets }
+            return lhs.effectiveSets > rhs.effectiveSets
+        }
     }
 
     /// One row per muscle group the **plan** covers, so a group trained zero

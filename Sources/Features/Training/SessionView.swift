@@ -254,6 +254,11 @@ private struct LoggedExerciseCard: View {
                                             .frame(minWidth: indexWidth, alignment: .leading)
                                         Text(set.summary)
                                             .font(.subheadline.monospacedDigit())
+                                        if let label = set.type.shortLabel {
+                                            Text(label)
+                                                .font(.caption2)
+                                                .foregroundStyle(.secondary)
+                                        }
                                         if let rir = set.rir {
                                             Text("RIR \(rir)")
                                                 .font(.caption2)
@@ -355,6 +360,7 @@ private struct SetEditorView: View {
     @State private var suggestedWeight: Double?
     @State private var reps: Int = 8
     @State private var rir: Int = 2
+    @State private var type: SetType = .working
 
     private var isEditing: Bool { existing != nil }
 
@@ -400,6 +406,13 @@ private struct SetEditorView: View {
                 }
 
                 Section {
+                    Picker("Satztyp", selection: $type) {
+                        ForEach(SetType.allCases, id: \.self) { type in
+                            Text(type.displayName).tag(type)
+                        }
+                    }
+                    .accessibilityIdentifier("setType")
+                    .glassRow(.first)
                     Picker("Reps in Reserve", selection: $rir) {
                         ForEach(0...5, id: \.self) { value in
                             Text("\(value)").tag(value)
@@ -408,7 +421,7 @@ private struct SetEditorView: View {
                     .pickerStyle(.segmented)
                     .accessibilityLabel("Reps in Reserve")
                     .accessibilityIdentifier("setRir")
-                    .glassRow()
+                    .glassRow(.last)
                 } header: {
                     // Spelled out, not just "RIR": the abbreviation says nothing
                     // to anyone who has not met it before, and this is the screen
@@ -443,6 +456,7 @@ private struct SetEditorView: View {
             suggestedWeight = existing.weight > 0 ? existing.weight : nil
             reps = existing.reps
             rir = existing.rir ?? 2
+            type = existing.type
             return
         }
         // Within the session the previous set wins; for the first set of the day
@@ -453,6 +467,7 @@ private struct SetEditorView: View {
             suggestedWeight = last.weight > 0 ? last.weight : nil
             reps = last.reps
             rir = last.rir ?? 2
+            type = last.type
         } else if let suggestion {
             suggestedWeight = suggestion.weight > 0 ? suggestion.weight : nil
             reps = suggestion.reps
@@ -466,6 +481,7 @@ private struct SetEditorView: View {
             existing.weight = effectiveWeight
             existing.reps = reps
             existing.rir = rir
+            existing.type = type
             saveReporter.perform("Satz ändern") { try context.save() }
             // No pause: correcting a set is not finishing one.
             dismiss()
@@ -476,6 +492,7 @@ private struct SetEditorView: View {
             weight: effectiveWeight,
             reps: reps,
             rir: rir,
+            type: type,
             // A set entered afterwards belongs to the day it was performed, not to
             // the evening it was typed in.
             completedAt: session.isActive ? Date() : session.startedAt

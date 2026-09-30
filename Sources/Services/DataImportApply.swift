@@ -284,6 +284,7 @@ enum DataImportApply {
                         weight: set.weight,
                         reps: set.reps,
                         rir: set.rir,
+                        type: SetType(rawValue: set.type ?? "") ?? .working,
                         completedAt: set.completedAt
                     )
                     loggedSet.loggedExercise = logged

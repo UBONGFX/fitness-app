@@ -46,6 +46,7 @@ nonisolated enum SessionHistory {
             let sets = session.sortedExercises
                 .filter { $0.exercise?.id == exerciseID }
                 .flatMap(\.sortedSets)
+                .filter { $0.type.contributesToProgress }
             guard !sets.isEmpty else { return nil }
             return ExerciseHistoryEntry(
                 id: session.id,
